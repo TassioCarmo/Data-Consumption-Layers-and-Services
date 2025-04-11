@@ -81,7 +81,6 @@ De acordo com o ranking da DB-Engines, existem mais de 390 sistemas de gerenciam
 
 O **Sharding** (ou compartilhamento) é uma técnica que divide dados em linhas e colunas separadas, mantidas em instâncias separadas do servidor de banco de dados para distribuir a carga de tráfego.
 
-![Diagrama Sharding](https://example.com/img/sharding-diagram.png)
 *Representação conceitual de um banco de dados distribuído usando sharding*
 
 #### Benefícios do Sharding:
@@ -157,7 +156,6 @@ O **Teorema CAP** (também conhecido como Teorema de Brewer) estabelece que um s
 - **D**isponibilidade (Availability): Toda requisição a um nó recebe uma resposta
 - **T**olerância à Partição (Partition Tolerance): O sistema continua funcionando mesmo com falhas de comunicação entre nós
 
-![Diagrama CAP](https://example.com/img/cap-theorem.png)
 
 Exemplos práticos:
 - **CA**: Sistemas de banco de dados relacionais tradicionais (sacrificam a tolerância à partição)
@@ -768,7 +766,6 @@ Os bancos de dados podem ser caracterizados quanto à sua arquitetura:
    - Desafios de sincronização
    - Exemplo: Replica sets do MongoDB
 
-![Tipos de Arquitetura de Banco de Dados](https://example.com/img/db-architectures.png)
 
 ### Objetivo da Arquitetura de Banco de Dados / Database Architecture Objective
 
@@ -945,21 +942,13 @@ plt.show()
 Existem diversas fontes para datasets:
 
 1. **Portais Governamentais**:
-   - [Portal Brasileiro de Dados Abertos](https://dados.gov.br/)
-   - [Data.gov](https://www.data.gov/) (EUA)
+
 
 2. **Universidades e Instituições Acadêmicas**:
-   - [UCI Machine Learning Repository](https://archive.ics.uci.edu/ml/index.php)
-   - Repositórios acadêmicos de várias universidades
 
 3. **Plataformas Especializadas**:
-   - [Kaggle](https://www.kaggle.com/datasets)
-   - [Google Dataset Search](https://datasetsearch.research.google.com/)
-   - [FiveThirtyEight](https://data.fivethirtyeight.com/)
 
 4. **APIs e Ferramentas Específicas**:
-   - [SIDRA/IBGE](https://servicodados.ibge.gov.br/api/docs/agregados?versao=3)
-   - [Awesome Public Datasets](https://github.com/awesomedata/awesome-public-datasets) no GitHub
 
 Os datasets são frequentemente disponibilizados em formatos como CSV (Comma-Separated Values), JSON, Excel, ou formatos específicos para determinadas aplicações.
 
@@ -1018,21 +1007,5 @@ Uma das formas mais importantes de dados abertos são os dados governamentais (O
 - Documentação detalhada dos métodos disponíveis
 - Recurso valioso para análises demográficas e econômicas do Brasil
 
-### Fontes de Dados Públicos / Public Data Sources
 
-#### Fontes Nacionais:
-- [INEP](https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos) - Dados educacionais
-- [Portal da Transparência](https://portaldatransparencia.gov.br/) - Gastos governamentais
-- [Open Data SUS](https://opendata.saude.gov.br/) - Dados de saúde pública
-- [Base dos Dados](https://basedosdados.org/) - Versão tratada de dados públicos brasileiros
-- [Data Rio](https://www.data.rio/) - Dados da cidade do Rio de Janeiro
-- [Portal da Transparência de SP](https://www.transparencia.sp.gov.br/) - Dados do estado de São Paulo
-
-#### Outras Fontes Interessantes:
-- [FiveThirtyEight](https://data.fivethirtyeight.com/) - Site interativo com visualizações de dados
-  - Exemplos: Airline Safety (acidentes por companhia aérea), US Weather History (dados meteorológicos históricos)
-- [Awesome Data](https://github.com/awesomedata/awesome-public-datasets) - Repositório GitHub com conjuntos de dados por categoria
-- [Google Dataset Search Tool](https://cloud.google.com/bigquery/public-data/) - Ferramenta de busca específica para datasets
-
----
 
