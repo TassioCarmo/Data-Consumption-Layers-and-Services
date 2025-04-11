@@ -1,708 +1,946 @@
-# Banco de Dados Relacionais e Linguagem SQL - Parte II | Relational Databases and SQL Language - Part II
+# Arquitetura de Dados: Conceitos Fundamentais e Tecnologias Modernas
+# Data Architecture: Fundamental Concepts and Modern Technologies
 
-Este repositório contém o material complementar da disciplina de Bancos de Dados Relacionais e Linguagem SQL (Parte II), integrante do programa de pós-graduação.
+## Sumário / Summary
+- [Introdução / Introduction](#introdução--introduction)
+- [Camadas em Dados / Data Layers](#camadas-em-dados--data-layers)
+  - [Camadas de Armazenamento / Storage Layers](#camadas-de-armazenamento--storage-layers)
+- [ORMs (Object-Relational Mappers)](#orms-object-relational-mappers)
+  - [ORMs vs ODMs](#orms-x-odmx)
+  - [Integração com Outras Camadas / Integration with Other Layers](#integração-camada-de-armazenamento-com-outras-camadas)
+- [Tipos de Bancos de Dados / Database Types](#tipos-de-bancos-de-dados--database-types)
+  - [Bancos de Dados Relacionais / Relational Databases](#banco-de-dados-relacional--relational-database)
+  - [Normalização / Normalization](#normalização--normalization)
+  - [Modelos de Dados / Data Models](#modelos-de-dados--data-models)
+- [Bancos de Dados NoSQL / NoSQL Databases](#bancos-de-dados-nosql--nosql-databases)
+  - [Características / Characteristics](#nosql---características--characteristics)
+  - [Modelos de Bancos NoSQL / NoSQL Database Models](#modelos-de-bancos-nosql--nosql-database-models)
+  - [Ausência de Esquema / Schema-less Design](#bancos-de-dados-nosql---schema--nosql-databases---schema)
+- [Bancos de Dados NewSQL / NewSQL Databases](#bancos-de-dados-newsql--newsql-databases)
+  - [Comparativo: SQL x NoSQL x NewSQL](#sql-x-nosql-x-newsql)
+- [Teorema CAP / CAP Theorem](#teorema-cap--cap-theorem)
+  - [Consistência Eventual / Eventual Consistency](#consistência-eventual--eventual-consistency)
+- [Escalabilidade / Scalability](#escalabilidade--scalability)
+- [Sistemas de Arquivos Distribuídos / Distributed File Systems](#sistemas-de-arquivos-distribuídos--distributed-file-systems)
+  - [Requisitos / Requirements](#requisitos-de-um-sistemas-de-arquivos--file-system-requirements)
+  - [Arquitetura / Architecture](#arquitetura-do-sad--dfs-architecture)
+- [Apache Hadoop](#apache-hadoop)
+  - [HDFS (Hadoop Distributed File System)](#hdfs)
+  - [Módulos do Framework / Framework Modules](#módulos-do-framework-do-apache-hadoop--apache-hadoop-framework-modules)
+- [Computação em Nuvem / Cloud Computing](#computação-em-nuvem--cloud-computing)
+  - [Arquiteturas Monolíticas / Monolithic Architectures](#arquiteturas-monolíticas--monolithic-architectures)
+  - [Arquitetura de Microsserviços / Microservices Architecture](#arquitetura-de-microserviços--microservices-architecture)
+- [Containers](#containers)
+  - [Orquestração de Containers / Container Orchestration](#ferramentas-de-orquestração-de-containers--container-orchestration-tools)
+- [Boas Práticas e Considerações / Best Practices and Considerations](#boas-práticas-e-considerações--best-practices-and-considerations)
 
-## Sumário | Summary
-- [Ciclo de Vida do Desenvolvimento de Banco de Dados | Database Development Lifecycle](#ciclo-de-vida-do-desenvolvimento-de-banco-de-dados--database-development-lifecycle)
-- [Modelos de Dados, Esquemas e Instâncias | Data Models, Schemas and Instances](#modelos-de-dados-esquemas-e-instâncias--data-models-schemas-and-instances)
-- [Linguagem SQL: DDL, DML, DCL e TCL | SQL Language: DDL, DML, DCL and TCL](#linguagem-sql-ddl-dml-dcl-e-tcl--sql-language-ddl-dml-dcl-and-tcl)
-- [Álgebra e Cálculo Relacional | Relational Algebra and Calculus](#álgebra-e-cálculo-relacional--relational-algebra-and-calculus)
-- [Glossário | Glossary](#glossário--glossary)
+## Introdução / Introduction
 
-## Ciclo de Vida do Desenvolvimento de Banco de Dados | Database Development Lifecycle
+Este documento apresenta um glossário abrangente sobre conceitos fundamentais de arquitetura de dados, abordando desde os princípios básicos até as tecnologias mais recentes utilizadas no mercado. O conteúdo foi estruturado para servir tanto como material de estudo quanto como referência técnica para profissionais da área de dados.
 
-O desenvolvimento de banco de dados segue uma abordagem sistemática top-down que transforma requisitos de informações de negócio em um banco de dados operacional. Conhecer cada estágio deste ciclo ajuda a planejar melhor um projeto e a ser mais produtivo na construção dos modelos.
+This document presents a comprehensive glossary of fundamental data architecture concepts, covering everything from basic principles to the latest technologies used in the market. The content has been structured to serve both as study material and as a technical reference for data professionals.
 
-### Estratégia e Análise | Strategy and Analysis
-- Estudar e analisar os requisitos de negócio utilizando entrevistas com usuários
-- Identificar os requisitos de dados
-- Prever possíveis necessidades futuras do sistema
-- Criar e revisar os modelos conceituais do sistema
-- Criar a representação gráfica do modelo
+## Camadas em Dados / Data Layers
 
-### Design | Design
-- Transformar o modelo desenvolvido na fase de estratégia e análise
-- Mapear entidades para tabelas, atributos para colunas, relacionamentos para chaves estrangeiras e regras de negócios para restrições
+As camadas em dados referem-se às diferentes etapas ou níveis de processamento e armazenamento em um sistema. Cada camada desempenha uma função específica no fluxo de dados, formando uma arquitetura coesa e eficiente.
 
-### Criação | Creation
-- Gravar e executar os comandos para criar as tabelas e os objetos de apoio do banco de dados
-- Preencher as tabelas com dados
-- Desenvolver a documentação do usuário, o texto da ajuda e os manuais de operação
+### Principais camadas em uma arquitetura de dados:
 
-### Transição | Transition
-- Conduzir o teste de aceitação do usuário
-- Verificar se o desenvolvimento atende aos requisitos de negócio
-- Operar de forma paralela e converter dados existentes quando necessário
-- Proceder com as correções apontadas
-- Implantar o sistema para usuários
-- Operar o sistema de produção
-- Monitorar o desempenho e refinar a operação do sistema
+1. **Camada de Ingestão (Ingestion Layer)**: Responsável pela coleta e importação de dados de diversas fontes (APIs, bancos de dados, arquivos, streams, etc.).
 
-## Modelos de Dados, Esquemas e Instâncias | Data Models, Schemas and Instances
+2. **Camada de Armazenamento (Storage Layer)**: Onde os dados são persistidos, utilizando diferentes tecnologias conforme as necessidades (bancos relacionais, NoSQL, sistemas de arquivos distribuídos).
 
-### Revisão de Conceitos Básicos | Basic Concepts Review
-- **Tabela**: estrutura de armazenamento básica
-- **Coluna**: um tipo de dados em uma tabela
-- **Linha**: dado para uma instância de tabela
-- **Campo**: o valor encontrado na intersecção entre uma linha e uma coluna
-- **Chave Primária**: identificador exclusivo de cada linha
-- **Chave Estrangeira**: coluna que se refere a uma coluna de chave primária em outra tabela
+3. **Camada de Processamento (Processing Layer)**: Realiza transformações, limpeza, agregações e demais operações sobre os dados brutos.
 
-### Propriedades Fundamentais | Fundamental Properties
-- P1: As entradas nas colunas têm um valor único
-- P2: As entradas nas colunas são do mesmo tipo
-- P3: Cada linha é única
-- P4: A sequência das colunas não é significativa
-- P5: A sequência das linhas não é significativa
-- P6: Cada coluna tem um nome exclusivo
+4. **Camada de Análise e Modelagem (Analysis and Modeling Layer)**: Responsável pela aplicação de técnicas estatísticas, algoritmos de machine learning e criação de modelos analíticos.
 
-### Schema | Schema
-Quando nosso diagrama entidade-relacionamento é implantado no SGBD (estrutura), ele ainda não possui dados armazenados. Neste momento, ele é apenas o projeto e, portanto, é chamado de esquema de banco de dados, que é modificado com pouca frequência.
+5. **Camada de Apresentação e Visualização (Presentation and Visualization Layer)**: Expõe os insights e resultados em formatos compreensíveis através de dashboards, relatórios e interfaces.
 
-**Exemplo de criação de schema:**
+### Camadas de Armazenamento / Storage Layers
+
+A Camada de Armazenamento é fundamental na arquitetura de sistemas de dados, responsável por gerenciar e persistir os dados consumidos e produzidos pela aplicação.
+
+#### Principais funções:
+
+- **Armazenamento de Dados**: Persistência dos dados em meios físicos ou virtuais
+- **Recuperação de Dados**: Mecanismos eficientes para busca e recuperação
+- **Transações**: Garantia de atomicidade e consistência nas operações
+- **Segurança dos Dados**: Controle de acesso, criptografia e proteção
+- **Escalabilidade**: Capacidade de crescer conforme o volume de dados aumenta
+- **Backup e Recuperação**: Procedimentos para resiliência e continuidade
+
+#### Tecnologias comuns:
+
+- **Bancos de Dados Relacionais (RDBMS)**: PostgreSQL, MySQL, Oracle, SQL Server
+- **Bancos de Dados NoSQL**: MongoDB, Cassandra, Redis, Neo4j
+- **Data Lakes e Data Warehouses**: Snowflake, Amazon Redshift, Google BigQuery
+- **Sistemas de Arquivos Distribuídos**: HDFS, Amazon S3, Azure Blob Storage
+
+## ORMs (Object-Relational Mappers)
+
+ORMs são ferramentas de software que permitem aos desenvolvedores interagirem com bancos de dados relacionais usando conceitos de programação orientada a objetos, abstraindo a necessidade de escrever queries SQL manualmente.
+
+```python
+# Exemplo de ORM em Python usando SQLAlchemy
+from sqlalchemy import Column, Integer, String
+from sqlalchemy.ext.declarative import declarative_base
+
+Base = declarative_base()
+
+class Usuario(Base):
+    __tablename__ = 'usuarios'
+    
+    id = Column(Integer, primary_key=True)
+    nome = Column(String)
+    email = Column(String)
+    
+# Criar um usuário usando orientação a objetos em vez de SQL
+novo_usuario = Usuario(nome="João Silva", email="joao@exemplo.com")
+session.add(novo_usuario)
+session.commit()
+```
+
+### ORMs x ODMx
+
+- **ORMs (Object-Relational Mappers)**: Utilizados com bancos de dados relacionais, mapeiam tabelas para classes e registros para objetos. Exemplos: Hibernate (Java), Entity Framework (.NET), SQLAlchemy (Python).
+
+- **ODMs (Object-Document Mappers)**: Utilizados com bancos de dados orientados a documentos, mapeiam documentos para objetos. Exemplos: Mongoose (JavaScript/MongoDB), MongoEngine (Python/MongoDB).
+
+#### Quando usar cada um:
+
+- **ORM**: Ideal para sistemas com relações complexas entre entidades, onde a normalização e integridade referencial são importantes.
+
+```javascript
+// Exemplo de ORM em JavaScript com Sequelize
+const Usuario = sequelize.define('Usuario', {
+  nome: Sequelize.STRING,
+  email: Sequelize.STRING
+});
+
+const Pedido = sequelize.define('Pedido', {
+  data: Sequelize.DATE,
+  valor: Sequelize.DECIMAL
+});
+
+// Definindo relacionamento
+Usuario.hasMany(Pedido);
+Pedido.belongsTo(Usuario);
+```
+
+- **ODM**: Preferível para casos com estrutura de dados menos complexa, onde todas as informações relacionadas podem ser armazenadas em um único documento, facilitando a escalabilidade.
+
+```javascript
+// Exemplo de ODM em JavaScript com Mongoose
+const usuarioSchema = new mongoose.Schema({
+  nome: String,
+  email: String,
+  pedidos: [{
+    data: Date,
+    valor: Number,
+    itens: [{
+      produto: String,
+      quantidade: Number
+    }]
+  }]
+});
+
+const Usuario = mongoose.model('Usuario', usuarioSchema);
+```
+
+### Integração Camada de Armazenamento com Outras Camadas
+
+A camada de armazenamento se integra com diversas outras camadas da arquitetura:
+
+- **Camada de Aplicação**: Fornece dados para lógica de negócios
+- **Camada de Integração**: Permite interoperabilidade entre sistemas
+- **Camada de Apresentação**: Alimenta interfaces e relatórios
+
+#### Desafios na Camada de Armazenamento de Dados
+
+- **Desempenho**: Otimização de consultas e indexação
+- **Gerenciamento de Grandes Volumes**: Estratégias para big data
+- **Consistência vs. Disponibilidade**: Equilibrar conforme o teorema CAP
+- **Segurança e Compliance**: Atender regulamentações como LGPD/GDPR
+
+#### Tendências e Futuro da Camada de Armazenamento
+
+- **Armazenamento em Nuvem**: Adoção crescente de soluções cloud-native
+- **Bancos de Dados Multimodelo**: Combinação de paradigmas relacionais e não-relacionais
+- **Armazenamento Descentralizado**: Blockchain e soluções distribuídas
+- **Automação e IA**: Sistemas auto-otimizáveis e autoadministrados
+
+## Tipos de Bancos de Dados / Database Types
+
+### Banco de Dados Relacional / Relational Database
+
+Bancos de dados relacionais estruturam dados de acordo com o modelo relacional, organizando informações em tabelas (relações) compostas por linhas (registros/tuplas) e colunas (atributos).
+
+#### Principais características:
+
+- **Estrutura rígida**: Schema predefinido
+- **Linguagem SQL**: Para consultas e manipulação
+- **Integridade referencial**: Garantida por chaves e restrições
+- **Transações ACID**: Atomicity, Consistency, Isolation, Durability
+- **Normalização**: Redução de redundância
+
+#### Elementos fundamentais:
+
+- **Tabelas (Relações)**: Estruturas que armazenam dados
+- **Registros (Tuplas)**: Linhas de uma tabela
+- **Atributos (Colunas)**: Propriedades dos dados
+- **Chaves**: Primary Key (PK), Foreign Key (FK), Unique Key (UK)
+- **Restrições**: Check Key (CK), Not Null (NN)
+
+#### Exemplos de SGBDs relacionais:
+
+- PostgreSQL
+- MySQL
+- Oracle Database
+- Microsoft SQL Server
+- IBM DB2
+
 ```sql
--- Criando um novo schema
-CREATE SCHEMA vendas;
-
--- Definindo o schema como padrão
-SET search_path TO vendas;
-
--- Criando tabela no schema específico
-CREATE TABLE vendas.produtos (
-    produto_id INT PRIMARY KEY,
+-- Exemplo de criação de tabela em SQL
+CREATE TABLE Clientes (
+    id INT PRIMARY KEY,
     nome VARCHAR(100) NOT NULL,
-    preco DECIMAL(10,2)
+    email VARCHAR(100) UNIQUE,
+    data_cadastro DATE DEFAULT CURRENT_DATE,
+    status CHAR(1) CHECK (status IN ('A', 'I'))
 );
 ```
 
-### Instância | Instance
-Informações começam a ser inseridas, atualizadas ou apagadas, sendo gerenciadas pelos mecanismos disponíveis no SGBD. A partir deste momento, com o banco de dados implantado, todo este conjunto passa a se chamar instância de banco de dados.
+### Normalização / Normalization
 
-Na prática, quando formos nos conectar a uma instância de banco de dados, teremos que fornecer:
-- Endereço (IP ou nome DNS)
-- Porta de conexão
-- Nome do schema
+Normalização é uma técnica de projeto lógico que reestrutura tabelas e atributos para reduzir redundâncias e permitir o crescimento consistente do banco de dados.
 
-**Exemplo de conexão com uma instância:**
-```sql
--- Exemplo de string de conexão em um aplicativo Java
-String url = "jdbc:postgresql://servidor.exemplo.com:5432/banco_dados";
-String usuario = "usuario";
-String senha = "senha";
-Connection conn = DriverManager.getConnection(url, usuario, senha);
+#### Problemas evitados com a normalização:
+
+- **Anomalias de inserção**: Impossibilidade de adicionar dados sem informações completas
+- **Anomalias de atualização**: Necessidade de alterar múltiplos registros para uma única mudança lógica
+- **Anomalias de exclusão**: Perda não intencional de dados relacionados
+
+#### Formas Normais:
+
+1. **1ª Forma Normal (1FN)**: Elimina grupos repetitivos e garante que cada atributo seja atômico (indivisível).
+
+   **Exemplo antes da 1FN:**
+   ```
+   Cliente(id, nome, telefone1, telefone2, telefone3)
+   ```
+   
+   **Exemplo após 1FN:**
+   ```
+   Cliente(id, nome)
+   Telefone(cliente_id, numero)
+   ```
+
+2. **2ª Forma Normal (2FN)**: Aplica-se a 1FN e elimina dependências funcionais parciais, garantindo que atributos não-chave dependam completamente da chave primária.
+
+   **Exemplo antes da 2FN:**
+   ```
+   Pedido(cliente_id, produto_id, data_pedido, valor_produto, nome_produto)
+   ```
+   
+   **Exemplo após 2FN:**
+   ```
+   Pedido(cliente_id, produto_id, data_pedido)
+   Produto(produto_id, nome_produto, valor_produto)
+   ```
+
+3. **3ª Forma Normal (3FN)**: Aplica-se a 2FN e elimina dependências transitivas, onde atributos não-chave dependem de outros atributos não-chave.
+
+   **Exemplo antes da 3FN:**
+   ```
+   Cliente(id, nome, cidade_id, cidade_nome, estado_sigla)
+   ```
+   
+   **Exemplo após 3FN:**
+   ```
+   Cliente(id, nome, cidade_id)
+   Cidade(cidade_id, cidade_nome, estado_sigla)
+   ```
+
+4. **Forma Normal de Boyce-Codd (FNBC)**: Refinamento da 3FN para casos especiais.
+
+5. **4ª Forma Normal (4FN)**: Trata dependências multivaloradas.
+
+6. **5ª Forma Normal (5FN)**: Lida com dependências de junção.
+
+> **Nota**: Considera-se que um banco de dados está "normalizado" quando atinge a 3FN. As formas posteriores (FNBC, 4FN e 5FN) são refinamentos adicionais para casos específicos.
+
+### Modelos de Dados / Data Models
+
+No design de bancos de dados, trabalhamos com três níveis principais de modelos:
+
+#### 1. Modelo Conceitual
+Representação de alto nível dos requisitos de negócio, independente de implementação técnica. Normalmente utiliza notação de Diagrama Entidade-Relacionamento (ER).
+
+**Características:**
+- Foco em entidades e seus relacionamentos
+- Independente de tecnologia
+- Usado para comunicação com stakeholders não-técnicos
+
+#### 2. Modelo Lógico
+Tradução do modelo conceitual para uma estrutura mais detalhada, mas ainda independente de SGBD específico.
+
+**Características:**
+- Define tabelas, colunas e relações
+- Especifica tipos de dados
+- Identifica chaves primárias e estrangeiras
+
+#### 3. Modelo Físico
+Implementação específica do modelo lógico para um SGBD particular, incluindo decisões técnicas de otimização.
+
+**Características:**
+- Específico para um SGBD (MySQL, PostgreSQL, etc.)
+- Inclui índices, partições, configurações de armazenamento
+- Otimizado para desempenho
+
+## Bancos de Dados NoSQL / NoSQL Databases
+
+NoSQL (Not Only SQL) refere-se a bancos de dados não-relacionais desenvolvidos para superar limitações dos bancos relacionais em aplicações web modernas e big data.
+
+### Origem e Evolução:
+
+- Iniciados por empresas como Google, Facebook, Amazon e LinkedIn
+- Projetados para lidar com volumes massivos de dados
+- Foco em escalabilidade horizontal e disponibilidade
+- Flexibilidade para dados não estruturados ou semiestruturados
+
+### NoSQL - Características / Characteristics
+
+- **Escalabilidade horizontal**: Capacidade de adicionar novos nós facilmente
+- **Esquema flexível ou ausente**: Adaptação rápida a mudanças nos dados
+- **Suporte nativo à replicação**: Alta disponibilidade
+- **APIs simples**: Facilidade de uso e integração
+- **Consistência eventual**: Priorização de disponibilidade sobre consistência imediata
+
+### Modelos de Bancos NoSQL / NoSQL Database Models
+
+#### 1. Chave-Valor (Key-Value)
+
+O modelo mais simples de NoSQL, onde cada item é armazenado como uma chave associada a um valor.
+
+**Características:**
+- Estrutura extremamente simples
+- Alto desempenho para operações de leitura/escrita
+- Escalabilidade horizontal eficiente
+- Ideal para cache, sessões de usuário, preferências
+
+**Exemplos:**
+- Redis
+- DynamoDB
+- Riak
+
+```
+// Exemplo conceitual de armazenamento chave-valor
+SET "usuario:1001" {
+  "nome": "Carlos Oliveira",
+  "email": "carlos@email.com",
+  "ultimoLogin": "2025-04-09T18:30:00Z"
+}
+
+GET "usuario:1001"
 ```
 
-### Instância em Nuvem | Cloud Instance
-No contexto da computação em nuvem, quando tivermos que contratar uma instância para nossos BDs, o conceito envolverá também recursos computacionais como:
-- CPU
-- Memória
-- Largura de banda
-- Performance de rede disponível
+#### 2. Orientado a Documentos (Document-Oriented)
 
-## Linguagem SQL: DDL, DML, DCL e TCL | SQL Language: DDL, DML, DCL and TCL
+Armazena dados em documentos semiestruturados (geralmente JSON ou BSON), permitindo hierarquia e consultas ao conteúdo.
 
-### DML (Data Manipulation Language) | Linguagem de Manipulação de Dados
+**Características:**
+- Documentos autocontidos com estrutura flexível
+- Consultas ricas ao conteúdo dos documentos
+- Indexação para pesquisas eficientes
+- Ideal para conteúdo, catálogos, CMS
 
-Instruções utilizadas para modificar os dados da tabela por meio da inclusão de novas linhas e alteração ou remoção de linhas existentes:
-- INSERT
-- UPDATE
-- DELETE
-- MERGE
-- SELECT (limitada à consulta)
+**Exemplos:**
+- MongoDB
+- Couchbase
+- Firebase Firestore
 
-#### SELECT | Selecionar
-A instrução SELECT acessa os dados no banco de dados. Apesar de não manipular os dados (não faz alterações permanentes), pode operar nos dados acessados retornando valores calculados ou organizados de forma diferente dos originais.
-
-**Exemplo básico:**
-```sql
--- Estrutura básica do SELECT
-SELECT nome_coluna1, nome_coluna2
-FROM nome_tabela
-WHERE condição;
-
--- Exemplo prático
-SELECT primeiro_nome, sobrenome
-FROM clientes
-WHERE cidade = 'São Paulo';
+```json
+// Exemplo de documento JSON no MongoDB
+{
+  "_id": ObjectId("60a2b3c4d5e6f7g8h9i0j1k2"),
+  "nome": "Alice Silva",
+  "email": "alice@email.com",
+  "endereco": {
+    "rua": "Av. Principal, 123",
+    "cidade": "São Paulo",
+    "cep": "01001-000"
+  },
+  "pedidos": [
+    { "id": "P001", "valor": 250.00, "data": "2025-03-15" },
+    { "id": "P002", "valor": 175.50, "data": "2025-04-02" }
+  ],
+  "ativo": true
+}
 ```
 
-#### Conceitos Importantes | Important Concepts
-- **Palavra-chave**: comando individual (SELECT, FROM)
-- **Cláusula**: parte da instrução (SELECT last_name)
-- **Instrução**: combinação de duas ou mais cláusulas (SELECT name FROM actor)
+#### 3. Orientado a Colunas (Column-Oriented)
 
-#### Operadores Aritméticos | Arithmetic Operators
-- Ordem MDAS (Multiplicação, Divisão, Adição, Subtração)
-- Se operadores aparecerem juntos, multiplicação e divisão são avaliadas primeiro
-- Se operadores tiverem mesma prioridade, avaliação é feita da esquerda para direita
-- Para melhor organização, use parênteses para indicar prioridades
+Projetado para armazenar e processar grandes volumes de dados distribuídos, organizando-os em famílias de colunas.
 
-**Exemplo:**
-```sql
--- Uso de operadores aritméticos
-SELECT 
-    produto_id,
-    nome,
-    preco,
-    quantidade,
-    preco * quantidade AS valor_total,
-    (preco * quantidade) * 0.9 AS valor_com_desconto
-FROM produtos
-WHERE (preco * quantidade) > 1000;
+**Características:**
+- Otimizado para consultas em grandes conjuntos de dados
+- Armazenamento eficiente por coluna (não por linha)
+- Alta escalabilidade para operações de escrita
+- Ideal para data warehousing, big data
+
+**Exemplos:**
+- Apache Cassandra
+- HBase
+- Google Bigtable
+
 ```
-
-#### NULL | Valor Nulo
-- NULL representa valor indisponível, inaplicável, desconhecido ou não atribuído
-- Não é zero, espaço, traço ou qualquer outra representação de ausência de valor
-- Qualquer operação aritmética com NULL resulta em NULL (exceto divisão por 0, que gera erro)
-
-**Exemplo:**
-```sql
--- Tratamento de valores NULL
-SELECT 
-    produto_id,
-    nome,
-    preco,
-    COALESCE(desconto, 0) AS desconto,
-    preco * (1 - COALESCE(desconto, 0)) AS preco_final
-FROM produtos;
-
--- Verificação de valores NULL
-SELECT *
-FROM funcionarios
-WHERE salario IS NULL;
-```
-
-#### Aliases | Apelidos
-- Renomeia a coluna de saída para leitura mais amigável
-- Útil para cálculos
-- Deve vir imediatamente após o nome da coluna, usando a palavra AS
-
-**Exemplo:**
-```sql
--- Uso de aliases para colunas
-SELECT 
-    primeiro_nome AS nome,
-    sobrenome AS "Nome de Família",
-    data_nascimento AS nascimento,
-    (salario * 12) AS "Salário Anual"
-FROM funcionarios;
-```
-
-#### DESCRIBE/DESC | Descrever
-Retorna informações sobre a estrutura da tabela:
-- Nome da tabela
-- Tipos de dados
-- Chaves primárias e estrangeiras
-- Colunas anuláveis
-- Comentários
-
-**Exemplo:**
-```sql
--- No Oracle/MySQL
-DESCRIBE clientes;
--- ou
-DESC clientes;
-
--- No PostgreSQL
-\d clientes;
-
--- No SQL Server
-EXEC sp_columns 'clientes';
-```
-
-#### Função de Concatenação | Concatenation Function
-- Vincula colunas a outras
-- Deixa a saída mais amigável
-- Economiza código
-
-**Exemplo:**
-```sql
--- No PostgreSQL/MySQL
-SELECT 
-    produto_id,
-    CONCAT(nome, ' - ', categoria) AS produto_categoria
-FROM produtos;
-
--- No Oracle
-SELECT 
-    produto_id,
-    nome || ' - ' || categoria AS produto_categoria
-FROM produtos;
-
--- No SQL Server
-SELECT 
-    produto_id,
-    nome + ' - ' + categoria AS produto_categoria
-FROM produtos;
-```
-
-#### DISTINCT | Distinto
-Elimina linhas duplicadas, útil para saber quantas instâncias únicas existem em uma tabela.
-
-**Exemplo:**
-```sql
--- Obtendo valores únicos
-SELECT DISTINCT cidade
-FROM clientes
-ORDER BY cidade;
-
--- Combinação de colunas para valores únicos
-SELECT DISTINCT cidade, estado
-FROM clientes
-ORDER BY cidade, estado;
-```
-
-#### Operadores de Comparação | Comparison Operators
-- = (igual)
-- > (maior que)
-- < (menor que)
-- >= (maior ou igual)
-- <= (menor ou igual)
-- <> ou != (diferente)
-
-#### BETWEEN AND | Entre
-Seleciona e exibe linhas com base em uma faixa de valores (inclusive).
-
-**Exemplo:**
-```sql
--- Selecionando registros dentro de uma faixa
-SELECT produto_id, nome, preco
-FROM produtos
-WHERE preco BETWEEN 100 AND 500;
-
--- Equivalente a
-SELECT produto_id, nome, preco
-FROM produtos
-WHERE preco >= 100 AND preco <= 500;
-```
-
-#### IN | Conjunto
-Testa se um valor está dentro de um conjunto específico de valores.
-
-**Exemplo:**
-```sql
--- Verificando se valor está em um conjunto
-SELECT produto_id, nome, categoria
-FROM produtos
-WHERE categoria IN ('Eletrônicos', 'Informática', 'Acessórios');
-
--- Equivalente a
-SELECT produto_id, nome, categoria
-FROM produtos
-WHERE categoria = 'Eletrônicos' OR categoria = 'Informática' OR categoria = 'Acessórios';
-```
-
-#### LIKE | Padrão
-Seleciona linhas correspondentes a caracteres, datas ou padrões de números usando caracteres curinga:
-- % representa qualquer sequência de zero ou mais caracteres
-- _ representa um único caractere
-
-**Exemplo:**
-```sql
--- Encontrando nomes que começam com "Jo"
-SELECT primeiro_nome, sobrenome
-FROM clientes
-WHERE primeiro_nome LIKE 'Jo%';
-
--- Encontrando nomes que têm "an" em qualquer posição
-SELECT primeiro_nome, sobrenome
-FROM clientes
-WHERE primeiro_nome LIKE '%an%';
-
--- Encontrando nomes com exatamente 4 caracteres
-SELECT primeiro_nome, sobrenome
-FROM clientes
-WHERE primeiro_nome LIKE '____';
-```
-
-#### IS NULL / IS NOT NULL | É Nulo / Não é Nulo
-Verifica se um valor é NULL ou não.
-
-**Exemplo:**
-```sql
--- Encontrando registros com valores nulos
-SELECT produto_id, nome, descricao
-FROM produtos
-WHERE descricao IS NULL;
-
--- Encontrando registros com valores não nulos
-SELECT funcionario_id, nome, data_demissao
-FROM funcionarios
-WHERE data_demissao IS NOT NULL;
-```
-
-#### INSERT | Inserir
-Insere novos registros em uma tabela.
-
-**Exemplo:**
-```sql
--- Inserção básica com todos os campos
-INSERT INTO clientes (cliente_id, nome, email, telefone)
-VALUES (1, 'João Silva', 'joao@email.com', '(11) 99999-8888');
-
--- Inserção com campos opcionais (NULL)
-INSERT INTO clientes (cliente_id, nome, email)
-VALUES (2, 'Maria Santos', 'maria@email.com');
-
--- Inserção de múltiplos registros
-INSERT INTO clientes (cliente_id, nome, email)
-VALUES 
-    (3, 'Pedro Oliveira', 'pedro@email.com'),
-    (4, 'Ana Souza', 'ana@email.com');
-
--- Inserção com subconsulta
-INSERT INTO clientes_vip (cliente_id, nome, email)
-SELECT cliente_id, nome, email
-FROM clientes
-WHERE total_compras > 10000;
-```
-
-#### UPDATE | Atualizar
-Modifica linhas existentes em uma tabela.
-
-**Exemplo:**
-```sql
--- Atualização básica
-UPDATE produtos
-SET preco = 199.99
-WHERE produto_id = 10;
-
--- Atualização com múltiplas colunas
-UPDATE funcionarios
-SET salario = salario * 1.1,
-    ultima_atualizacao = CURRENT_DATE
-WHERE departamento_id = 5;
-
--- Atualização com subconsulta
-UPDATE pedidos
-SET status = 'Enviado'
-WHERE cliente_id IN (
-    SELECT cliente_id
-    FROM clientes
-    WHERE tipo = 'Premium'
+// Representação conceitual de banco orientado a colunas (Cassandra)
+CREATE TABLE usuarios (
+  userid uuid PRIMARY KEY,
+  nome text,
+  email text,
+  cidade text
 );
+
+// Armazenamento interno organizado por colunas
+Coluna "nome": 
+  uuid1: "Pedro Souza"
+  uuid2: "Maria Santos"
+  
+Coluna "email":
+  uuid1: "pedro@email.com"
+  uuid2: "maria@email.com"
 ```
 
-> **IMPORTANTE**: Nunca faça UPDATE sem WHERE, pois isso modificará todas as linhas da tabela!
+#### 4. Orientado a Grafos (Graph-Oriented)
 
-#### FOR UPDATE / COMMIT | Para Atualização / Confirmar
-Bloqueia registros para atualização e confirma as alterações.
+Especializado em representar e analisar relações complexas entre entidades.
 
-**Exemplo:**
-```sql
--- Bloqueando registros para atualização (transação)
-BEGIN;
-SELECT * FROM contas
-WHERE cliente_id = 1234
-FOR UPDATE;
+**Componentes:**
+- Nós (vértices): Entidades com propriedades
+- Relacionamentos (arestas): Conexões entre nós, com direção e tipo
+- Propriedades: Atributos de nós e relacionamentos
 
--- Fazendo alterações
-UPDATE contas
-SET saldo = saldo - 1000
-WHERE cliente_id = 1234;
+**Características:**
+- Otimizado para consultas de relacionamentos
+- Travessia eficiente de grafos
+- Ideal para redes sociais, detecção de fraude, recomendações, conhecimento conectado
 
--- Confirmando as alterações
-COMMIT;
+**Exemplos:**
+- Neo4j
+- JanusGraph
+- ArangoDB
+
+```cypher
+// Exemplo de consulta em Neo4j (Cypher Query Language)
+MATCH (user:Pessoa {nome: "João"})-[:AMIGO_DE]->(amigo:Pessoa)
+WHERE amigo.cidade = "Rio de Janeiro"
+RETURN amigo.nome, amigo.idade
 ```
 
-#### DELETE | Excluir
-Remove linhas de uma tabela.
+### Bancos de Dados NoSQL - Schema / NoSQL Databases - Schema
 
-**Exemplo:**
-```sql
--- Exclusão básica
-DELETE FROM produtos_obsoletos
-WHERE data_fabricacao < '2020-01-01';
+A ausência de esquema rígido (schema-free) ou esquema flexível é uma característica distintiva dos bancos NoSQL, permitindo:
 
--- Exclusão com subconsulta
-DELETE FROM pedidos
-WHERE cliente_id IN (
-    SELECT cliente_id
-    FROM clientes
-    WHERE status = 'Inativo'
-);
+- **Evolução natural dos dados**: Sem migrações complexas de schema
+- **Adaptação rápida**: Para novos requisitos de negócio
+- **Heterogeneidade**: Documentos ou registros com estruturas diferentes
+- **Alta escalabilidade**: Facilitada pela distribuição sem esquema central
+
+**Desvantagem**: A flexibilidade de esquema pode comprometer a integridade dos dados, exigindo validação na camada de aplicação.
+
+#### JSON (JavaScript Object Notation)
+
+JSON é um formato leve de intercâmbio de dados, amplamente usado em bancos NoSQL orientados a documentos:
+
+- Formato compacto e legível por humanos
+- Par atributo-valor
+- Suporte a tipos primitivos, arrays e objetos aninhados
+- Independente de linguagem de programação
+
+```json
+{
+  "id": 1001,
+  "nome": "Notebook Premium",
+  "preco": 4999.90,
+  "especificacoes": {
+    "processador": "Intel i7",
+    "memoria": "16GB",
+    "armazenamento": "512GB SSD"
+  },
+  "categorias": ["eletrônicos", "computadores", "notebooks"],
+  "disponivel": true
+}
 ```
 
-> **IMPORTANTE**: Todas as linhas na tabela serão excluídas se você não usar a cláusula WHERE!
+## Bancos de Dados NewSQL / NewSQL Databases
 
-#### MERGE | Mesclar
-Faz inserção e atualização simultaneamente.
+NewSQL representa uma classe de SGBDs relacionais modernos que buscam combinar o melhor dos dois mundos:
 
-**Exemplo:**
-```sql
--- No Oracle/SQL Server
-MERGE INTO produtos_destino d
-USING produtos_origem o
-ON (d.produto_id = o.produto_id)
-WHEN MATCHED THEN
-    UPDATE SET 
-        d.nome = o.nome,
-        d.preco = o.preco,
-        d.estoque = o.estoque,
-        d.ultima_atualizacao = CURRENT_TIMESTAMP
-WHEN NOT MATCHED THEN
-    INSERT (produto_id, nome, preco, estoque, ultima_atualizacao)
-    VALUES (o.produto_id, o.nome, o.preco, o.estoque, CURRENT_TIMESTAMP);
+- A escalabilidade horizontal do NoSQL
+- As garantias ACID e linguagem SQL dos bancos relacionais tradicionais
 
--- No PostgreSQL (alternativa com CTE)
-WITH atualizacoes AS (
-    SELECT o.produto_id, o.nome, o.preco, o.estoque
-    FROM produtos_origem o
-    LEFT JOIN produtos_destino d ON o.produto_id = d.produto_id
-)
-INSERT INTO produtos_destino (produto_id, nome, preco, estoque)
-SELECT produto_id, nome, preco, estoque FROM atualizacoes
-ON CONFLICT (produto_id) DO UPDATE
-SET nome = EXCLUDED.nome,
-    preco = EXCLUDED.preco,
-    estoque = EXCLUDED.estoque,
-    ultima_atualizacao = CURRENT_TIMESTAMP;
+### Características principais:
+
+- Preserva o modelo relacional e SQL
+- Mantém transações ACID
+- Oferece escalabilidade horizontal
+- Alta performance para grandes volumes de dados
+- Mantém esquema estruturado
+
+### Exemplos de bancos NewSQL:
+
+- Google Spanner
+- CockroachDB
+- VoltDB
+- NuoDB
+- MemSQL (agora SingleStore)
+
+### SQL x NoSQL x NewSQL
+
+| Característica              | SQL Tradicional | NoSQL | NewSQL |
+|-----------------------------|:--------------:|:-----:|:------:|
+| Relacional                  | ✅             | ❌    | ✅     |
+| SQL                         | ✅             | ❌    | ✅     |
+| Transações ACID             | ✅             | ❌    | ✅     |
+| Escalabilidade horizontal   | ❌             | ✅    | ✅     |
+| Performance/grandes volumes | ❌             | ✅    | ✅     |
+| Schema-less                 | ❌             | ✅    | ❌     |
+
+## Teorema CAP / CAP Theorem
+
+O teorema CAP, proposto por Eric Brewer, afirma que um sistema distribuído de dados pode garantir apenas duas das três propriedades simultaneamente:
+
+- **Consistência (Consistency)**: Todos os nós veem os mesmos dados ao mesmo tempo
+- **Disponibilidade (Availability)**: Todo pedido recebe uma resposta (sem erro)
+- **Tolerância a Partição (Partition Tolerance)**: O sistema continua operando mesmo com falhas de comunicação entre nós
+
+![Teorema CAP](https://miro.medium.com/max/1400/1*rxTP-_STj-QRDt1X9fdVlA.png)
+
+### Escolhas comuns nos bancos de dados:
+
+- **CA (Consistência + Disponibilidade)**: Bancos relacionais tradicionais
+- **CP (Consistência + Tolerância a Partição)**: MongoDB, HBase
+- **AP (Disponibilidade + Tolerância a Partição)**: Cassandra, DynamoDB
+
+### Consistência Eventual / Eventual Consistency
+
+A consistência eventual é um modelo derivado do teorema CAP onde:
+
+- Prioriza-se disponibilidade e tolerância a partição (AP)
+- As escritas são aceitas imediatamente
+- A sincronização entre nós ocorre posteriormente
+- Temporariamente, diferentes nós podem mostrar valores diferentes
+- Eventualmente, todos os nós convergem para o mesmo valor
+
+```
+Exemplo de consistência eventual:
+
+1. Nó A recebe atualização: perfil.nome = "Carlos"
+2. Nó B ainda mostra o valor antigo: perfil.nome = "Carlos Oliveira"
+3. Após sincronização (milissegundos/segundos depois), Nó B: perfil.nome = "Carlos"
 ```
 
-### Data Warehouse | Armazém de Dados
-Uma coleção de dados feita para auxiliar no processo de tomada de decisão do gerenciamento de negócios. Contém uma grande variedade de dados (pessoais, vendas, clientes, folhas de pagamento, contabilidade) que apresentam uma imagem coerente das condições dos negócios em um ponto único no tempo.
+Bancos que implementam consistência eventual:
+- Amazon DynamoDB
+- Apache Cassandra
+- MongoDB (em configurações específicas)
+- CouchDB
 
-**Exemplo de carga de dados para DW:**
-```sql
--- Carga incremental para fatos de vendas
-INSERT INTO dw_fatos_vendas (
-    data_id, 
-    produto_id, 
-    cliente_id, 
-    loja_id, 
-    quantidade, 
-    valor_total
-)
-SELECT 
-    d.data_id,
-    p.produto_id,
-    c.cliente_id,
-    l.loja_id,
-    v.quantidade,
-    v.valor_total
-FROM vendas v
-JOIN dim_data d ON v.data_venda = d.data
-JOIN dim_produto p ON v.produto_codigo = p.codigo_origem
-JOIN dim_cliente c ON v.cliente_codigo = c.codigo_origem
-JOIN dim_loja l ON v.loja_codigo = l.codigo_origem
-WHERE v.data_venda > (SELECT MAX(ultima_carga) FROM controle_carga WHERE tabela = 'fatos_vendas');
+## Escalabilidade / Scalability
 
--- Atualização do controle de carga
-UPDATE controle_carga
-SET ultima_carga = CURRENT_TIMESTAMP
-WHERE tabela = 'fatos_vendas';
+Escalabilidade refere-se à capacidade de um sistema em lidar com crescimento no volume de dados, transações ou usuários.
+
+### Tipos de escalabilidade:
+
+#### 1. Escalabilidade Vertical (Scale-up)
+- Aumentar recursos na mesma máquina (CPU, memória, armazenamento)
+- Limites físicos de hardware
+- Geralmente mais simples de implementar
+- Custos exponenciais
+
+```
+Exemplo: Atualizar servidor de 16GB RAM para 64GB RAM
 ```
 
-## Álgebra e Cálculo Relacional | Relational Algebra and Calculus
+#### 2. Escalabilidade Horizontal (Scale-out)
+- Adicionar mais nós/servidores ao sistema
+- Distribuição de carga entre múltiplas máquinas
+- Teoricamente sem limite de crescimento
+- Desafios de coordenação e sincronização
 
-### Terminologia | Terminology
-- **Linha = Tupla | Row = Tuple**
-- **Coluna = Atributo | Column = Attribute**
-- **Tabela = Relação | Table = Relation**
-- **Tipos de Dados = Domínio | Data Types = Domain**
-
-### Operações | Operations
-
-#### Operações Unárias | Unary Operations
-- Seleção (σ)
-- Projeção (π)
-
-#### Operações com Base na Teoria dos Conjuntos | Set Theory Operations
-- União (∪)
-- Interseção (∩)
-- Diferença (-)
-- Produto Cartesiano (×)
-
-#### Operações Binárias | Binary Operations
-- Junção (⋈)
-- Divisão (÷)
-
-#### Seleção (σ) | Selection
-Escolhe um subconjunto de tuplas de uma relação que satisfaça uma condição de seleção. Funciona como um filtro que mantém apenas as tuplas que satisfazem uma condição qualificadora.
-
-**Notação:**
 ```
-σ condição (Relação)
+Exemplo: Aumentar cluster de 3 servidores para 10 servidores
 ```
 
-**Equivalente SQL:**
-```sql
-SELECT *
-FROM Tabela
-WHERE condição;
+### Fatores importantes:
+
+- **Throughput**: Capacidade de processar operações por unidade de tempo
+- **Latência**: Tempo para completar uma operação
+- **Elasticidade**: Capacidade de escalar dinamicamente conforme demanda
+- **Linearidade**: Manter desempenho proporcional ao aumento de recursos
+
+## Sistemas de Arquivos Distribuídos / Distributed File Systems
+
+Sistemas de Arquivos Distribuídos (DFS ou SAD) permitem armazenar e acessar arquivos remotos como se fossem locais, distribuindo os dados entre múltiplos servidores.
+
+### Características principais:
+
+- Acesso transparente a arquivos remotos
+- Compartilhamento entre múltiplos usuários/aplicações
+- Alta disponibilidade através de replicação
+- Escalabilidade horizontal
+- Tolerância a falhas
+
+### Requisitos de um Sistemas de Arquivos / File System Requirements
+
+- **Transparência**: Usuários não precisam saber onde os arquivos estão fisicamente
+- **Concorrência**: Múltiplos usuários podem acessar arquivos simultaneamente
+- **Replicação**: Cópias de arquivos em diferentes locais para disponibilidade
+- **Heterogeneidade**: Suporte a diferentes plataformas e sistemas
+- **Tolerância a falha**: Funcionamento mesmo com falhas parciais
+- **Consistência**: Todas as réplicas mostram o mesmo conteúdo
+- **Segurança**: Controle de acesso e proteção
+- **Eficiência**: Desempenho próximo ao de um sistema local
+
+### Arquitetura do SAD / DFS Architecture
+
+A arquitetura típica divide responsabilidades entre três módulos principais:
+
+1. **Cliente**: Interface com o usuário ou aplicação
+2. **Serviço de arquivos planos**: Gerencia o armazenamento e acesso aos dados
+3. **Serviço de diretórios**: Mantém a estrutura de diretórios e localização de arquivos
+
+#### Design aberto:
+- Compatibilidade com diferentes interfaces de cliente
+- Simulação de operações de diversos sistemas operacionais
+- Otimização de desempenho para diferentes configurações
+
+#### Exemplos de DFS:
+- Network File System (NFS)
+- Andrew File System (AFS)
+- Google File System (GFS)
+- Ceph File System
+- GlusterFS
+
+## Apache Hadoop
+
+Hadoop é uma plataforma de código aberto para armazenamento e processamento distribuído de grandes conjuntos de dados em clusters de computadores comuns.
+
+### Características principais:
+
+- Framework Java para computação distribuída
+- Processamento paralelo e distribuído
+- Alta tolerância a falhas
+- Design para hardware comum (commodity hardware)
+- Escalabilidade horizontal simples
+
+### Benefícios do Apache Hadoop
+
+- **Capacidade**: Armazenamento e processamento de petabytes de dados
+- **Flexibilidade**: Trabalha com dados estruturados e não estruturados
+- **Tolerância a falhas**: Replicação automática de dados
+- **Custo-efetividade**: Utiliza hardware commodity
+- **Escalabilidade**: Adicionar nós conforme necessário
+
+### HDFS
+
+HDFS (Hadoop Distributed File System) é o sistema de arquivos distribuído do Hadoop, projetado para:
+
+- Armazenar arquivos muito grandes (gigabytes a terabytes)
+- Executar em hardware comum
+- Alta tolerância a falhas
+- Otimizado para throughput (não para latência)
+
+#### Arquitetura HDFS:
+
+1. **NameNode (Master)**:
+   - Armazena metadados
+   - Gerencia o namespace do sistema de arquivos
+   - Mantém a árvore de diretórios
+   - Rastreia onde os dados estão armazenados
+
+2. **DataNode (Worker)**:
+   - Armazena os blocos de dados reais
+   - Gerencia o armazenamento local
+   - Executa operações de leitura/escrita
+   - Reporta status ao NameNode
+
+```
+Exemplo de comando HDFS via linha de comando:
+
+# Listar arquivos em um diretório
+hdfs dfs -ls /user/data
+
+# Copiar arquivo do sistema local para HDFS
+hdfs dfs -put arquivo_local.txt /user/data/
+
+# Ler conteúdo de um arquivo
+hdfs dfs -cat /user/data/arquivo.txt
 ```
 
-**Exemplo:**
-```sql
--- Álgebra Relacional: σ idade > 30 (Funcionarios)
--- SQL equivalente:
-SELECT *
-FROM Funcionarios
-WHERE idade > 30;
+### Módulos do Framework do Apache Hadoop / Apache Hadoop Framework Modules
+
+1. **Hadoop Common**: Bibliotecas e utilitários usados por outros módulos
+2. **HDFS (Hadoop Distributed File System)**: Sistema de arquivos distribuído
+3. **Hadoop YARN (Yet Another Resource Negotiator)**: Gerenciador de recursos e agendador de jobs
+4. **Hadoop MapReduce**: Modelo de programação para processamento paralelo
+
+
+### Módulos do Framework do Apache Hadoop / Apache Hadoop Framework Modules (continuação)
+
+```java
+// Exemplo conceitual de MapReduce em Java
+public class WordCount {
+  
+  public static class TokenizerMapper extends Mapper<Object, Text, Text, IntWritable> {
+    private final static IntWritable one = new IntWritable(1);
+    private Text word = new Text();
+      
+    public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
+      StringTokenizer itr = new StringTokenizer(value.toString());
+      while (itr.hasMoreTokens()) {
+        word.set(itr.nextToken());
+        context.write(word, one);
+      }
+    }
+  }
+  
+  public static class IntSumReducer extends Reducer<Text, IntWritable, Text, IntWritable> {
+    private IntWritable result = new IntWritable();
+      
+    public void reduce(Text key, Iterable<IntWritable> values, Context context) 
+        throws IOException, InterruptedException {
+      int sum = 0;
+      for (IntWritable val : values) {
+        sum += val.get();
+      }
+      result.set(sum);
+      context.write(key, result);
+    }
+  }
+}
 ```
 
-#### Projeção (π) | Projection
-Seleciona certos atributos enquanto descarta outros. É uma partição vertical da relação.
+O ecosistema Hadoop inclui ainda várias ferramentas complementares:
 
-**Notação:**
+- **Hive**: SQL sobre Hadoop
+- **Pig**: Linguagem de alto nível para análise de dados
+- **Spark**: Engine para processamento em memória
+- **HBase**: Banco de dados NoSQL orientado a colunas
+- **ZooKeeper**: Serviço de coordenação para sistemas distribuídos
+
+## Computação em Nuvem / Cloud Computing
+
+A computação em nuvem oferece recursos computacionais sob demanda através da internet, sem necessidade de gerenciamento direto de infraestrutura. Os três principais provedores são AWS (Amazon Web Services), Microsoft Azure e Google Cloud Platform.
+
+### Modelos de serviço:
+
+1. **IaaS (Infrastructure as a Service)**: Provê infraestrutura virtualizada
+   - Exemplos: Amazon EC2, Azure VMs, Google Compute Engine
+
+2. **PaaS (Platform as a Service)**: Fornece plataforma de desenvolvimento
+   - Exemplos: AWS Elastic Beanstalk, Azure App Service, Google App Engine
+
+3. **SaaS (Software as a Service)**: Entrega aplicações completas
+   - Exemplos: Microsoft 365, Google Workspace, Salesforce
+
+### Arquiteturas Monolíticas / Monolithic Architectures
+
+Em arquiteturas monolíticas, todos os componentes da aplicação são desenvolvidos, implantados e escalados como uma única unidade.
+
+#### Características:
+- Todos os processos são altamente acoplados
+- Componentes compartilham recursos como memória e banco de dados
+- Implantação única para toda a aplicação
+- Escalabilidade vertical (todo o sistema precisa escalar junto)
+
+#### Limitações:
+- Aumento da complexidade com crescimento do sistema
+- Dificuldade de manutenção e adição de recursos
+- Maior impacto em caso de falhas (um problema afeta todo o sistema)
+- Desafios para trabalho em equipes grandes
+- Restrições tecnológicas (todo o sistema usa as mesmas tecnologias)
+
 ```
-π expressões (Relação)
-```
+Exemplo simplificado de arquitetura monolítica:
 
-**Equivalente SQL:**
-```sql
-SELECT atributo1, atributo2, ...
-FROM Tabela;
-```
-
-**Exemplo:**
-```sql
--- Álgebra Relacional: π nome, salario (Funcionarios)
--- SQL equivalente:
-SELECT nome, salario
-FROM Funcionarios;
-```
-
-#### Operações de Conjunto | Set Operations
-
-##### União (∪) | Union
-Inclui todas as tuplas que estão na relação R ou S ou em ambas, desconsiderando duplicatas.
-
-**Notação:**
-```
-Relação₁ ∪ Relação₂
-```
-
-**Equivalente SQL:**
-```sql
-SELECT *
-FROM Tabela1
-UNION
-SELECT *
-FROM Tabela2;
-```
-
-**Exemplo:**
-```sql
--- Álgebra Relacional: Clientes_SP ∪ Clientes_RJ
--- SQL equivalente:
-SELECT *
-FROM Clientes
-WHERE estado = 'SP'
-UNION
-SELECT *
-FROM Clientes
-WHERE estado = 'RJ';
+[Interface do Usuário]
+        ↓
+[Lógica de Negócios]
+        ↓
+[Acesso a Dados]
+        ↓
+[Banco de Dados Único]
 ```
 
-##### Interseção (∩) | Intersection
-Inclui todas as tuplas que estão tanto na relação R quanto em S.
+### Arquitetura de Microsserviços / Microservices Architecture
 
-**Notação:**
-```
-Relação₁ ∩ Relação₂
-```
+Na arquitetura de microsserviços, a aplicação é decomposta em serviços pequenos e independentes, cada um responsável por uma função específica de negócio.
 
-**Equivalente SQL:**
-```sql
-SELECT *
-FROM Tabela1
-INTERSECT
-SELECT *
-FROM Tabela2;
-```
+#### Características:
+- Serviços independentes com responsabilidades bem definidas
+- Comunicação via APIs (geralmente REST ou gRPC)
+- Implantação e escalabilidade independentes
+- Cada serviço pode ter seu próprio banco de dados
+- Flexibilidade tecnológica (diferentes linguagens/frameworks)
 
-**Exemplo:**
-```sql
--- Álgebra Relacional: Produtos_Eletronicos ∩ Produtos_Promocao
--- SQL equivalente:
-SELECT produto_id
-FROM Produtos
-WHERE categoria = 'Eletrônicos'
-INTERSECT
-SELECT produto_id
-FROM Produtos
-WHERE em_promocao = true;
-```
+#### Vantagens:
+- **Escalabilidade flexível**: Escalar apenas os serviços necessários
+- **Implantação independente**: Redução de riscos e ciclos mais rápidos
+- **Isolamento de falhas**: Problemas em um serviço não afetam todo o sistema
+- **Times especializados**: Equipes menores focadas em serviços específicos
+- **Adoção tecnológica incremental**: Liberdade para usar a tecnologia mais adequada para cada componente
 
-##### Diferença (-) | Difference
-Contém as tuplas que estão na relação R, mas não em S.
-
-**Notação:**
 ```
-Relação₁ - Relação₂
+Exemplo simplificado de arquitetura de microsserviços:
+
+[UI]     [UI Mobile]     [UI Admin]
+   ↓          ↓             ↓
+[API Gateway / Load Balancer]
+   ↓          ↓             ↓
+[Serviço    [Serviço      [Serviço
+Usuários]   Produtos]     Pedidos]
+   ↓          ↓             ↓
+[BD       [BD           [BD
+Usuários]  Produtos]     Pedidos]
 ```
 
-**Equivalente SQL:**
-```sql
-SELECT *
-FROM Tabela1
-EXCEPT (ou MINUS, dependendo do SGBD)
-SELECT *
-FROM Tabela2;
+## Containers
+
+Containers são unidades de software padronizadas que empacotam código e todas as suas dependências para que a aplicação seja executada de forma rápida e confiável em diferentes ambientes computacionais.
+
+### Principais características:
+
+- **Isolamento**: Container inclui todo o necessário para executar a aplicação
+- **Leveza**: Não incluem sistema operacional completo (diferente de VMs)
+- **Portabilidade**: Executam consistentemente em qualquer ambiente
+- **Eficiência**: Compartilham kernel do host, consumindo menos recursos
+- **Inicialização rápida**: Iniciam em segundos (vs. minutos das VMs)
+
+### Docker
+
+Docker é a plataforma mais popular para criação e execução de containers:
+
+```dockerfile
+# Exemplo de Dockerfile simples
+FROM python:3.9
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+EXPOSE 5000
+
+CMD ["python", "app.py"]
 ```
 
-**Exemplo:**
-```sql
--- Álgebra Relacional: Funcionarios - Gerentes
--- SQL equivalente:
-SELECT funcionario_id
-FROM Funcionarios
-EXCEPT
-SELECT funcionario_id
-FROM Funcionarios
-WHERE cargo = 'Gerente';
+### Ferramentas de Orquestração de Containers / Container Orchestration Tools
+
+Orquestradores de containers gerenciam múltiplos containers em ambientes de produção, automatizando:
+
+- **Implantação (deployment)**: Distribuição de containers em clusters
+- **Escalonamento (scaling)**: Aumento/diminuição do número de instâncias
+- **Balanceamento de carga**: Distribuição de tráfego
+- **Descoberta de serviços**: Localização de serviços na rede
+- **Self-healing**: Detecção e recuperação automática de falhas
+- **Atualizações graduais**: Roll-outs e roll-backs controlados
+
+### Principais orquestradores:
+
+1. **Kubernetes (K8s)**:
+   - Desenvolvido pelo Google, agora mantido pela CNCF
+   - Padrão de facto para orquestração
+   - Altamente escalável e extensível
+   - Recursos poderosos de rede, armazenamento e segurança
+
+2. **Amazon ECS (Elastic Container Service)**:
+   - Serviço gerenciado da AWS
+   - Integração nativa com outros serviços AWS
+   - Mais simples que Kubernetes, mas menos flexível
+
+3. **Docker Swarm**:
+   - Solução nativa do Docker
+   - Mais simples de configurar e usar
+   - Adequado para implantações menores
+
+```yaml
+# Exemplo de configuração Kubernetes para um deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: microservice-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: microservice
+  template:
+    metadata:
+      labels:
+        app: microservice
+    spec:
+      containers:
+      - name: api-container
+        image: myregistry/myapp:v1.2
+        ports:
+        - containerPort: 8080
+        resources:
+          limits:
+            cpu: "1"
+            memory: "512Mi"
+          requests:
+            cpu: "0.5"
+            memory: "256Mi"
 ```
 
-#### Produto Cartesiano (×) | Cartesian Product
-Combina informações de duas relações quaisquer, resultando em todas as combinações possíveis entre os elementos das relações originais.
+## Boas Práticas e Considerações / Best Practices and Considerations
 
-**Notação:**
-```
-Relação₁ × Relação₂
-```
+### Indicadores de Desempenho (KPIs)
 
-**Equivalente SQL:**
-```sql
-SELECT *
-FROM Tabela1
-CROSS JOIN Tabela2;
-```
+Ao trabalhar com arquitetura de dados, é fundamental estabelecer métricas para monitorar o desempenho e a eficácia dos sistemas:
 
-**Exemplo:**
-```sql
--- Álgebra Relacional: Produtos × Fornecedores
--- SQL equivalente:
-SELECT *
-FROM Produtos
-CROSS JOIN Fornecedores;
-```
+- **Latência**: Tempo para completar operações
+- **Throughput**: Volume de operações por tempo
+- **Taxa de erro**: Percentual de falhas
+- **Tempo de resposta**: Experiência do usuário final
+- **Utilização de recursos**: CPU, memória, I/O, rede
+- **Disponibilidade**: Uptime do sistema (muitas vezes medido em "noves" - 99,9%, 99,99%, etc.)
 
-## Glossário | Glossary
+### Atemporalidade em Análise de Dados
 
-| Termo | Definição |
-|------|-----------|
-| **Álgebra Relacional** | Coleção de operações formais em relações, que servem como base para linguagens de consulta em bancos de dados relacionais. |
-| **Atributo** | Coluna de uma tabela ou relação que armazena um tipo específico de informação. |
-| **Banco de Dados** | Conjunto centralizado e estruturado de dados armazenados em um sistema de computador. |
-| **Cardinalidade** | Indica a quantidade em que um relacionamento pode ocorrer (um-um, um-muitos, muitos-muitos). |
-| **Chave Estrangeira (FK)** | Coluna que referencia a chave primária de outra tabela. |
-| **Chave Primária (PK)** | Identificador único que garante a individualidade de cada registro. |
-| **DML** | Data Manipulation Language - linguagem utilizada para manipular dados (INSERT, UPDATE, DELETE, SELECT). |
-| **DDL** | Data Definition Language - linguagem utilizada para definir estruturas de dados (CREATE, ALTER, DROP). |
-| **DCL** | Data Control Language - linguagem utilizada para controlar acesso aos dados (GRANT, REVOKE). |
-| **TCL** | Transaction Control Language - linguagem utilizada para controlar transações (COMMIT, ROLLBACK). |
-| **Data Warehouse** | Coleção de dados integrados, orientada por assunto, variável com o tempo e não volátil, que suporta o processo de tomada de decisão. |
-| **Domínio** | Conjunto de valores permitidos para um atributo. |
-| **Esquema** | Descrição da estrutura lógica do banco de dados, incluindo tabelas, colunas e relacionamentos. |
-| **Instância** | Estado atual do banco de dados com todos os dados armazenados em um determinado momento. |
-| **MERGE** | Comando SQL que combina operações de INSERT e UPDATE em uma única instrução. |
-| **NULL** | Valor especial que representa dados ausentes, desconhecidos ou não aplicáveis. |
-| **Produto Cartesiano** | Operação que combina cada linha de uma tabela com todas as linhas de outra tabela. |
-| **Projeção** | Operação da álgebra relacional que seleciona atributos específicos de uma relação. |
-| **Relação** | Tabela em um banco de dados relacional formada por linhas e colunas. |
-| **Seleção** | Operação da álgebra relacional que filtra tuplas de acordo com uma condição. |
-| **SGBD** | Sistema Gerenciador de Banco de Dados - software que gerencia o armazenamento, manipulação e recuperação de dados. |
-| **SQL** | Structured Query Language - linguagem padrão para trabalhar com bancos de dados relacionais. |
-| **Tupla** | Linha de uma tabela ou relação que representa uma entidade específica. |
+Ao analisar dados temporais, é crucial considerar a atemporalidade para evitar comparações incorretas:
+
+- **Sazonalidade**: Padrões que se repetem em períodos específicos
+- **Eventos especiais**: Feriados, promoções, mudanças climáticas
+- **Comparações período-a-período**: Comparar períodos equivalentes (mesmo mês de anos diferentes, dias úteis vs. fins de semana)
+
+**Exemplo:** Ao analisar uso de transporte público, comparar março (com Carnaval) e fevereiro pode levar a conclusões errôneas devido aos dias atípicos durante o feriado.
+
+### Ferramentas para Processamento
+
+Familiarize-se com ferramentas modernas para processamento de dados:
+
+- **Apache Airflow**: Orquestração e agendamento de workflows
+- **Apache Beam**: Modelo unificado para processamento batch e streaming
+- **Apache Spark**: Processamento analítico de alta velocidade
+- **Apache Kafka**: Plataforma de streaming distribuído
+- **Apache Flink**: Processamento de streams em tempo real
+
+### Considerações para Escolha de Tecnologias
+
+Ao selecionar tecnologias para sua arquitetura de dados, considere:
+
+1. **Volume de dados**: Atual e projeção futura
+2. **Velocidade de ingestão**: Batch vs. streaming vs. tempo real
+3. **Variedade dos dados**: Estruturados, semiestruturados, não estruturados
+4. **Requisitos de consistência**: ACID vs. eventual
+5. **Padrões de acesso**: Leitura intensiva vs. escrita intensiva
+6. **Escalabilidade necessária**: Vertical vs. horizontal
+7. **Expertise da equipe**: Conhecimento tecnológico disponível
+8. **Custos**: Licenciamento, hardware, desenvolvimento, manutenção
+9. **Requisitos de disponibilidade**: SLAs esperados
+10. **Conformidade e regulamentações**: LGPD, GDPR, segurança
