@@ -1,6 +1,5 @@
 # Arquitetura e Consumo de Dados | Data Architecture and Consumption
 
-![Data Architecture Banner](/api/placeholder/800/200)
 
 ## Sobre a Disciplina | About the Course
 
