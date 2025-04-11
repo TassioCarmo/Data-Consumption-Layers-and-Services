@@ -1,645 +1,1038 @@
-# Banco de Dados SQL: Glossário e Conceitos Fundamentais
 
-Este documento serve como um guia abrangente para a disciplina de Banco de Dados SQL da pós-graduação, organizando conceitos fundamentais de SQL e administração de bancos de dados relacionais.
+# Arquiteturas com Alta Disponibilidade (HA) / High Availability Architectures
 
-## Sumário
+## Sumário / Summary
+- [Introdução / Introduction](#introdução--introduction)
+- [Alta Disponibilidade / High Availability](#alta-disponibilidade--high-availability)
+- [Sistemas Distribuídos / Distributed Systems](#sistemas-distribuídos--distributed-systems)
+- [Fragmentação de Database / Database Fragmentation](#fragmentação-de-database--database-fragmentation)
+  - [Sharding / Sharding](#sharding--sharding)
+  - [Como Aplicar o Sharding / How to Apply Sharding](#como-aplicar-o-sharding-para-um-dbms--how-to-apply-sharding-for-a-dbms)
+  - [Sharding e Replicação / Sharding and Replication](#sharding-e-replicação--sharding-and-replication)
+- [Banco de Dados NoSQL / NoSQL Databases](#banco-de-dados-nosql--nosql-databases)
+  - [Teorema CAP / CAP Theorem](#teorema-cap--cap-theorem)
+  - [MongoDB e Alta Disponibilidade / MongoDB and High Availability](#arquiteturas-com-alta-disponibilidade-ha--exemplo-mongodb--high-availability-architectures--mongodb-example)
+- [Sistemas de Arquivos Distribuídos / Distributed File Systems](#sistemas-de-arquivos-distribuídos--distributed-file-systems)
+- [Blocos Funcionais em Arquitetura de Dados / Functional Blocks in Data Architecture](#blocos-funcionais-em-uma-arquitetura-de-dados--functional-blocks-in-data-architecture)
+  - [Tipos de SGDs / Types of Data Management Systems](#tipos-de-sistemas-gerenciadores-de-dados--types-of-data-management-systems)
+  - [Benefícios da Arquitetura de Dados / Benefits of Data Architecture](#benefícios-de-arquitetura-de-dados--benefits-of-data-architecture)
+  - [Características de Arquiteturas Modernas / Characteristics of Modern Architectures](#características-de-uma-arquitetura-moderna-de-dados--characteristics-of-modern-data-architecture)
+- [ETL vs ELT](#etl-vs-elt)
+- [DevOps e DataOps](#devops-e-dataops--devops-and-dataops)
+  - [Princípios de DevOps / DevOps Principles](#princípios-básicos-do-devops--basic-devops-principles)
+  - [DataOps / DataOps](#dataops--dataops)
+- [Engines para Data Warehousing / Data Warehousing Engines](#engine-para-data-warehousing--data-warehousing-engines)
+  - [C-Store](#c-store)
+  - [Soluções em Nuvem / Cloud Solutions](#warehouse-engine--warehouse-engines)
+- [Data Engineering com Apache Flink / Data Engineering with Apache Flink](#data-engineering--apache-flink--data-engineering--apache-flink)
+  - [Apache Flink vs Apache Spark](#considerações-ao-escolher-o-apache-flink--considerations-when-choosing-apache-flink)
+- [Projetos de Arquitetura de Dados / Data Architecture Projects](#o-que-é-uma-arquitetura-de-dados--what-is-a-data-architecture)
+- [Business Intelligence vs Business Analytics](#business-intelligence-bi-vs-business-analytics-ba)
+- [Datasets / Datasets](#datasets--datasets)
+  - [Tipos e Propriedades / Types and Properties](#tipos-de-datasets--types-of-datasets)
+  - [Fontes de Dados / Data Sources](#onde-encontrar--where-to-find)
 
-1. [Comandos DML e Funções](#comandos-dml-e-funções)
-2. [Junções](#junções)
-3. [Subconsultas](#subconsultas)
-4. [Constraints e Views](#constraints-e-views)
-5. [Sequences, Índices e Sinônimos](#sequences-índices-e-sinônimos)
-6. [Privilégios e Expressões Regulares](#privilégios-e-expressões-regulares)
+## Introdução / Introduction
 
-## Comandos DML e Funções
+Este documento apresenta conceitos fundamentais sobre Arquiteturas com Alta Disponibilidade (HA) e os principais componentes envolvidos na construção de sistemas distribuídos robustos. É um material essencial para profissionais de TI que desejam aprofundar seus conhecimentos em arquiteturas modernas de dados, especialmente aquelas voltadas para ambiente de produção que exigem confiabilidade e resiliência.
 
-### Classificação de Linhas (Row Sorting)
+A alta disponibilidade é um requisito crítico para serviços digitais modernos, e entender as técnicas, padrões e tecnologias que permitem construir tais sistemas é fundamental para o sucesso de projetos de tecnologia em escala.
 
-- A classificação de resultados é um recurso essencial do SQL
-- Embora o design do BD organize funções de negócio por entidade e atributos, o SQL utiliza a cláusula `ORDER BY` para ordenação de dados
-- Por padrão, a ordenação é crescente (do menor para o maior)
-- Valores NULL são exibidos por último, mas podem ser configurados com `NULL FIRST` ou `NULL LAST`
+## Alta Disponibilidade / High Availability
 
-Exemplo:
-```sql
--- Ordenação básica crescente (padrão)
-SELECT employee_id, first_name, salary
-FROM employees
-ORDER BY salary;
+**Alta disponibilidade** (HA - High Availability) refere-se a um conjunto de tecnologias e práticas que minimizam as interrupções de TI, proporcionando continuidade dos negócios e serviços de TI através de componentes redundantes e tolerantes a falhas. Estes sistemas são projetados para permanecer operacionais mesmo quando componentes individuais falham.
 
--- Ordenação decrescente
-SELECT employee_id, first_name, salary
-FROM employees
-ORDER BY salary DESC;
+Um sistema com alta disponibilidade tipicamente apresenta:
+- Redundância de componentes (hardware e software)
+- Mecanismos de failover automatizados
+- Balanceamento de carga
+- Monitoramento contínuo
+- Recuperação rápida de falhas
 
--- Configurando posição dos valores NULL
-SELECT employee_id, first_name, commission_pct
-FROM employees
-ORDER BY commission_pct NULLS FIRST;
+O objetivo principal é minimizar o "downtime" (tempo de inatividade), tipicamente medido como uma porcentagem do tempo total de operação. Por exemplo, um sistema "cinco noves" (99,999%) teria apenas cerca de 5 minutos de inatividade não planejada por ano.
+
+## Sistemas Distribuídos / Distributed Systems
+
+Sistemas distribuídos são recursos computacionais compartilhados em uma rede que permitem:
+- Aumento no desempenho
+- Maior tolerância a falhas
+- Melhor escalabilidade
+
+A característica fundamental de um sistema distribuído é que, apesar de consistir em múltiplos computadores independentes, ele se apresenta aos usuários como sendo um **sistema único e coeso**.
+
+### Principais componentes:
+
+1. **Sistema de arquivo distribuído (SAD)**:
+   - Permite que programas armazenem e acessem arquivos remotos como se fossem locais
+   - Possibilita acesso a partir de qualquer computador na rede
+
+2. **Replicação**:
+   - É o segredo da eficácia dos sistemas distribuídos
+   - Fornece melhor desempenho, alta disponibilidade e tolerância a falhas
+   - Mantém cópias dos dados em múltiplos nós para garantir acesso mesmo quando parte do sistema falha
+
+**Exemplo prático:** Um cluster Hadoop opera como um sistema distribuído onde o processamento de dados ocorre em paralelo em vários nós, mas o usuário interage com ele como se fosse um único sistema.
+
+## Fragmentação de Database / Database Fragmentation
+
+De acordo com o ranking da DB-Engines, existem mais de 390 sistemas de gerenciamento de banco de dados, cada um com suas particularidades e abordagens para escalabilidade e disponibilidade.
+
+### Sharding / Sharding
+
+O **Sharding** (ou compartilhamento) é uma técnica que divide dados em linhas e colunas separadas, mantidas em instâncias separadas do servidor de banco de dados para distribuir a carga de tráfego.
+
+![Diagrama Sharding](https://example.com/img/sharding-diagram.png)
+*Representação conceitual de um banco de dados distribuído usando sharding*
+
+#### Benefícios do Sharding:
+- Melhora o desempenho ao distribuir a carga entre vários servidores
+- Aumenta a disponibilidade através da redundância
+- Permite escalabilidade horizontal (adicionando mais servidores)
+- Distribui o risco, pois uma falha afeta apenas uma parte dos dados
+
+### Como Aplicar o Sharding para um DBMS / How to Apply Sharding for a DBMS
+
+Uma das melhores técnicas para implementar sharding é dividir os dados em várias tabelas pequenas, também chamadas de **partições**. Esta abordagem pode ser implementada de diferentes formas:
+
+1. **Sharding por Faixa (Range Sharding)**:
+   ```sql
+   -- Exemplo de particionamento por faixa em PostgreSQL
+   CREATE TABLE vendas (
+       id SERIAL,
+       data_venda DATE,
+       valor DECIMAL(10,2)
+   ) PARTITION BY RANGE (data_venda);
+
+   CREATE TABLE vendas_2023 PARTITION OF vendas
+       FOR VALUES FROM ('2023-01-01') TO ('2024-01-01');
+   
+   CREATE TABLE vendas_2024 PARTITION OF vendas
+       FOR VALUES FROM ('2024-01-01') TO ('2025-01-01');
+   ```
+
+2. **Sharding por Hash**:
+   Distribui os dados uniformemente baseado em valores hash das chaves.
+
+3. **Sharding por Lista (List Sharding)**:
+   Particiona baseado em listas discretas de valores (como países ou categorias).
+
+### Sharding e Replicação / Sharding and Replication
+
+A **replicação** cria nós de banco de dados duplicados que operam de forma independente. Os dados gravados em um nó são replicados em outros nós duplicados, garantindo redundância.
+
+O sharding pode ser implementado através de:
+- Um driver de conexão de banco de dados especializado
+- Um aplicativo proxy que roteia dados para os shards corretos
+
+**Arquitetura híbrida:** Muitos sistemas modernos utilizam uma combinação de sharding e replicação, onde os dados são particionados entre diferentes shards, e cada shard é replicado para garantir disponibilidade.
+
+```
+Arquitetura de Sharding + Replicação:
+[Cliente] → [Router/Proxy] → [Shard 1 Primary] ↔ [Shard 1 Replicas]
+                           → [Shard 2 Primary] ↔ [Shard 2 Replicas]
+                           → [Shard 3 Primary] ↔ [Shard 3 Replicas]
 ```
 
-### Tipos de Funções
+## Banco de Dados NoSQL / NoSQL Databases
 
-#### Função de Linha Única (Single-Row Functions)
+Bancos de dados NoSQL são projetados para alta disponibilidade e escalabilidade horizontal, com características como:
 
-- Operam em linhas individuais e retornam um resultado por linha
-- Incluem funções de caractere, número, data e conversão de tipos
-- Úteis para padronização de registros, principalmente quanto a maiúsculas e minúsculas
+- **Escalabilidade horizontal**: Capacidade de adicionar mais servidores/nós facilmente
+- **Ausência de esquema ou esquema flexível**: Não necessita de estrutura rígida predefinida
+- **Suporte à replicação nativo**: Replicação integrada ao design do banco
+- **API simples**: Interfaces de programação mais diretas
+- **Consistência eventual**: Nem sempre prioriza a consistência imediata dos dados
 
-Exemplo:
-```sql
--- Função de caractere: converte para maiúsculo
-SELECT UPPER(first_name) AS nome_maiusculo
-FROM employees;
+**Tipos principais de bancos NoSQL:**
+1. **Documentos**: MongoDB, CouchDB
+2. **Colunas**: Cassandra, HBase
+3. **Chave-valor**: Redis, DynamoDB
+4. **Grafos**: Neo4j, JanusGraph
 
--- Função numérica: arredonda para uma casa decimal
-SELECT employee_id, salary, ROUND(salary/12, 1) AS salario_mensal
-FROM employees;
+### Teorema CAP / CAP Theorem
+
+O **Teorema CAP** (também conhecido como Teorema de Brewer) estabelece que um sistema distribuído de bancos de dados somente pode garantir dois dos três comportamentos seguintes simultaneamente:
+
+- **C**onsistência (Consistency): Todos os nós veem os mesmos dados ao mesmo tempo
+- **D**isponibilidade (Availability): Toda requisição a um nó recebe uma resposta
+- **T**olerância à Partição (Partition Tolerance): O sistema continua funcionando mesmo com falhas de comunicação entre nós
+
+![Diagrama CAP](https://example.com/img/cap-theorem.png)
+
+Exemplos práticos:
+- **CA**: Sistemas de banco de dados relacionais tradicionais (sacrificam a tolerância à partição)
+- **CP**: MongoDB, HBase (podem sacrificar disponibilidade em alguns cenários)
+- **AP**: Cassandra, DynamoDB (podem sacrificar consistência imediata)
+
+### Arquiteturas com Alta Disponibilidade (HA) – Exemplo MongoDB / High Availability Architectures – MongoDB Example
+
+À medida em que o volume de dados cresce, aumenta-se a necessidade de escalabilidade e melhoria do desempenho. Podemos:
+
+1. **Escalar verticalmente**: Adicionar mais CPU, memória e disco ao servidor existente
+2. **Escalar horizontalmente**: Adicionar mais nós ao cluster
+
+O MongoDB implementa alta disponibilidade através de:
+
+**Replica Sets**: Um conjunto de instâncias MongoDB que mantêm os mesmos dados, geralmente composto por:
+- 1 nó primário (que recebe todas as operações de escrita)
+- 2 ou mais nós secundários (que replicam os dados do primário)
+- Opcionalmente, nós árbitros (que participam de eleições)
+
+```javascript
+// Configuração de um Replica Set no MongoDB
+rs.initiate({
+  _id: "meuReplicaSet",
+  members: [
+    { _id: 0, host: "servidor1:27017" },
+    { _id: 1, host: "servidor2:27017" },
+    { _id: 2, host: "servidor3:27017" }
+  ]
+});
 ```
 
-#### Função Multilinha (Multi-Row Functions)
+**Sharding no MongoDB**: Para maior escalabilidade, o MongoDB oferece sharding nativo:
+- Os dados são divididos entre múltiplos shards
+- Cada shard pode ser um replica set para alta disponibilidade
+- Um componente router (mongos) direciona as operações para os shards apropriados
 
-- Manipulam grupos de linhas para fornecer um resultado por grupo
-- Também conhecidas como funções de grupo
-- Aceitam múltiplas linhas como entrada e retornam um único valor como saída
+## Sistemas de Arquivos Distribuídos / Distributed File Systems
 
-Exemplo:
-```sql
--- Média salarial
-SELECT AVG(salary) AS media_salarial
-FROM employees;
+Na busca de sistemas mais confiáveis, os sistemas de arquivos distribuídos são essenciais para garantir que os dados continuem acessíveis mesmo diante de falhas em servidores individuais.
 
--- Contagem de funcionários por departamento
-SELECT department_id, COUNT(*) AS total_funcionarios
-FROM employees
-GROUP BY department_id;
+A **replicação** é o método principal utilizado para aumentar a disponibilidade de um serviço de arquivos:
+- Os arquivos são armazenados em dois ou mais servidores
+- Se um servidor não estiver disponível, outro pode fornecer os serviços solicitados
+
+**Exemplos de sistemas de arquivos distribuídos:**
+1. **HDFS (Hadoop Distributed File System)**:
+   - Armazena grandes volumes de dados em clusters de máquinas commodities
+   - Replica blocos de dados (tipicamente 3x) em diferentes nós
+   - Projetado para alta tolerância a falhas
+
+2. **GlusterFS**:
+   - Sistema de arquivos distribuído de código aberto
+   - Escalável para petabytes de armazenamento
+   - Oferece diferentes tipos de volumes e métodos de redundância
+
+3. **Ceph**:
+   - Plataforma de armazenamento distribuído que fornece interfaces para objetos, blocos e arquivos
+   - Utiliza algoritmos inteligentes para replicação e recuperação
+
+Exemplo de arquitetura HDFS:
+```
+[Cliente HDFS] → [NameNode (metadados)] 
+                → [DataNode 1] - [Bloco A1, B1, C1]
+                → [DataNode 2] - [Bloco A2, B2, C2]
+                → [DataNode 3] - [Bloco A3, B3, C3]
 ```
 
-### Tabela DUAL
+## Blocos Funcionais em uma Arquitetura de Dados / Functional Blocks in Data Architecture
 
-- Recurso que permite testar funções sem necessidade de uma tabela física
-- Usada para criar instruções SELECT e executar funções não relacionadas a uma tabela específica
-- Útil para cálculos e avaliação de expressões
+### Tipos de Sistemas Gerenciadores de Dados / Types of Data Management Systems
 
-Exemplo:
-```sql
--- Calculando expressão matemática
-SELECT 24*60 AS minutos_dia FROM DUAL;
+1. **Data Warehouses**:
+   - Agregam dados de diferentes fontes relacionais em um repositório único, central e consistente
+   - Otimizados para análise e relatórios
+   - Exemplo: Teradata, Oracle Exadata, Amazon Redshift
 
--- Testando função de data
-SELECT SYSDATE, SYSDATE + 7 AS proxima_semana FROM DUAL;
+2. **Data Marts**:
+   - Versão focada de um Data Warehouse
+   - Contém um subconjunto de dados importante para uma equipe específica
+   - Exemplo: Um data mart específico para o departamento de RH
 
--- Manipulação de string
-SELECT UPPER('teste de função') FROM DUAL;
+3. **Data Lakes**:
+   - Armazenam dados brutos, normalmente petabytes
+   - Podem conter dados estruturados e não estruturados
+   - Exemplo: Lagos de dados baseados em Amazon S3, Azure Data Lake Storage
+
+4. **Data Fabrics**:
+   - Arquitetura focada na automação da integração de dados
+   - Utiliza metadados ativos, gráfico de conhecimento e ML
+   - Descobre padrões e automatiza a cadeia de valor de dados
+
+5. **Data Meshes**:
+   - Arquitetura descentralizada que organiza dados por domínio de negócios
+   - Trata dados como produtos
+   - Os produtores de dados atuam como proprietários de produtos
+
+### Benefícios de Arquitetura de Dados / Benefits of Data Architecture
+
+1. **Redução da redundância**:
+   - Padroniza como os dados são armazenados
+   - Reduz duplicação e inconsistências
+   - Permite análises holísticas e de melhor qualidade
+
+2. **Melhoria na qualidade dos dados**:
+   - Resolve desafios de "pântanos de dados" (data swamps)
+   - Implementa práticas adequadas de governança
+   - Exemplo: Um data lake sem governança adequada pode conter dados inconsistentes e de baixa qualidade, enquanto um bem gerenciado fornece dados confiáveis para análise
+
+3. **Habilitação da integração**:
+   - Facilita a integração de dados entre domínios
+   - Quebra silos organizacionais
+   - Permite que diferentes áreas tenham acesso aos dados necessários
+
+4. **Gerenciamento do ciclo de vida dos dados**:
+   - Define como os dados são gerenciados ao longo do tempo
+   - Estabelece políticas de retenção e arquivamento
+   - Implementa regras para dados históricos vs. dados operacionais
+
+### Características de uma Arquitetura Moderna de Dados / Characteristics of Modern Data Architecture
+
+Uma arquitetura moderna de dados deve ser:
+
+1. **Cloud-native e cloud-enabled**:
+   - Beneficia-se do dimensionamento elástico
+   - Aproveita a alta disponibilidade da nuvem
+   - Utiliza serviços gerenciados quando apropriado
+
+2. **Com pipelines de dados robustos e escaláveis**:
+   - Combina fluxos de trabalho inteligentes
+   - Integra análises cognitivas
+   - Suporta processamento em tempo real
+
+3. **Com integração de dados perfeita**:
+   - Usa interfaces de API padrão
+   - Conecta-se facilmente a aplicativos legados
+   - Facilita a interoperabilidade entre sistemas
+
+4. **Habilitada para dados em tempo real**:
+   - Inclui validação, classificação e gerenciamento em tempo real
+   - Implementa governança adequada
+   - Suporta decisões baseadas em dados atualizados
+
+5. **Desacoplada e extensível**:
+   - Elimina dependências rígidas entre serviços
+   - Adota padrões abertos
+   - Permite evolução e adaptação contínuas
+
+6. **Otimizada para equilíbrio entre custo e simplicidade**:
+   - Busca eficiência operacional
+   - Reduz complexidade desnecessária
+   - Maximiza o retorno sobre o investimento
+
+## ETL vs ELT
+
+**ETL (Extract, Transform, Load)** e **ELT (Extract, Load, Transform)** são duas abordagens diferentes para processamento de dados em ambientes de data warehouse ou data lake.
+
+**ETL - Abordagem tradicional:**
+1. **Extract**: Extração dos dados das fontes originais
+2. **Transform**: Transformação dos dados em área de preparação (staging)
+3. **Load**: Carregamento dos dados transformados no destino final
+
+**ELT - Abordagem moderna:**
+1. **Extract**: Extração dos dados das fontes originais
+2. **Load**: Carregamento imediato dos dados brutos no destino
+3. **Transform**: Transformação dos dados já no ambiente de destino
+
+**Comparação:**
+
+| Característica | ETL | ELT |
+|---------------|-----|-----|
+| Processamento | Em servidor dedicado | No banco de dados destino |
+| Velocidade de carga | Mais lenta (transformação prévia) | Mais rápida (carga direta) |
+| Custos iniciais | Menores (hardware menor) | Maiores (banco mais potente) |
+| Flexibilidade | Menor (transformações fixas) | Maior (transformações sob demanda) |
+| Ambientes ideais | Data Warehouses tradicionais | Data Lakes e ambientes em nuvem |
+
+**Exemplo de pipeline ETL com Apache Airflow:**
+```python
+# Definindo um DAG ETL simples
+with DAG('etl_pipeline', schedule_interval='@daily') as dag:
+    
+    extract_task = PythonOperator(
+        task_id='extract_data',
+        python_callable=extract_from_source
+    )
+    
+    transform_task = PythonOperator(
+        task_id='transform_data',
+        python_callable=transform_data
+    )
+    
+    load_task = PythonOperator(
+        task_id='load_data',
+        python_callable=load_to_destination
+    )
+    
+    extract_task >> transform_task >> load_task
 ```
 
-### Manipulação de Strings
-
-Exemplos:
+**Exemplo de pipeline ELT com Snowflake:**
 ```sql
--- Convertendo strings para maiúsculo/minúsculo
+-- Extrair e carregar dados brutos
+COPY INTO raw_data.customers 
+FROM @s3_stage/customer_data/
+FILE_FORMAT = (TYPE = 'CSV');
+
+-- Transformar posteriormente
+CREATE OR REPLACE VIEW analytics.customer_insights AS
 SELECT 
-    UPPER('texto exemplo') AS maiusculo,
-    LOWER('TEXTO EXEMPLO') AS minusculo,
-    INITCAP('texto exemplo') AS primeiras_maiusculas
-FROM DUAL;
-
--- Concatenando strings
-SELECT 
-    first_name || ' ' || last_name AS nome_completo,
-    CONCAT(first_name, last_name) AS nome_concatenado
-FROM employees;
-
--- Extraindo substrings
-SELECT 
-    SUBSTR('Banco de Dados', 1, 5) AS primeiros_cinco,
-    SUBSTR('Banco de Dados', 7) AS a_partir_setimo
-FROM DUAL;
+    customer_id,
+    first_name || ' ' || last_name AS full_name,
+    DATEDIFF('YEAR', birth_date, CURRENT_DATE()) AS age,
+    COUNT(order_id) AS total_orders
+FROM raw_data.customers c
+JOIN raw_data.orders o ON c.customer_id = o.customer_id
+GROUP BY 1, 2, 3;
 ```
 
-### Funções Numéricas
+## DevOps e DataOps / DevOps and DataOps
 
-#### ROUND
-Arredonda um número para o número especificado de casas decimais.
+### Princípios Básicos do DevOps / Basic DevOps Principles
 
-```sql
-SELECT 
-    ROUND(125.678) AS sem_decimais,       -- 126
-    ROUND(125.678, 1) AS uma_decimal,     -- 125.7
-    ROUND(125.678, -1) AS dezena          -- 130
-FROM DUAL;
+Um ciclo de vida de DevOps padrão consiste em 7 fases:
+
+1. **Desenvolvimento contínuo (Continuous Development)**:
+   - Planejamento e codificação contínuos
+   - Ferramentas: Git, JIRA, VS Code
+
+2. **Integração contínua (Continuous Integration)**:
+   - Compilação, validação e teste de código
+   - Ferramentas: Jenkins, GitLab CI, GitHub Actions
+
+3. **Testes Contínuos (Continuous Testing)**:
+   - Automação de testes unitários, de integração e de aceitação
+   - Ferramentas: Selenium, JUnit, TestNG
+
+4. **Monitoramento Contínuo (Continuous Monitoring)**:
+   - Observação do desempenho e da saúde da aplicação
+   - Ferramentas: Prometheus, Grafana, ELK Stack
+
+5. **Feedback contínuo (Continuous Feedback)**:
+   - Coleta e análise de feedback para melhoria
+   - Ferramentas: Jira, ServiceNow, PagerDuty
+
+6. **Implantação Contínua (Continuous Deployment)**:
+   - Entrega automatizada para ambientes de produção
+   - Ferramentas: Kubernetes, Ansible, Terraform
+
+7. **Operações contínuas (Continuous Operations)**:
+   - Manutenção e monitoramento contínuos
+   - Ferramentas: Docker, Kubernetes, Puppet
+
+Estas 7 fases do ciclo de vida do DevOps são contínuas e iterativas, permitindo melhorias constantes em todo o processo de desenvolvimento de software.
+
+**Exemplo de pipeline CI/CD com GitHub Actions:**
+```yaml
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Set up JDK
+      uses: actions/setup-java@v2
+      with:
+        java-version: '11'
+        
+    - name: Build with Maven
+      run: mvn -B package --file pom.xml
+      
+    - name: Run Tests
+      run: mvn test
+      
+    - name: Deploy to Production
+      if: success()
+      run: |
+        echo "Deploying to production server"
+        # Deployment commands here
 ```
 
-#### TRUNCATE
-Termina o número em um ponto determinado sem arredondamento.
+### DataOps / DataOps
 
-```sql
-SELECT 
-    TRUNC(125.678) AS sem_decimais,      -- 125
-    TRUNC(125.678, 1) AS uma_decimal,    -- 125.6
-    TRUNC(125.678, -1) AS dezena         -- 120
-FROM DUAL;
+**DataOps** é uma prática que aplica as melhores formas de trabalho da engenharia ágil e DevOps ao campo de gerenciamento de dados. É uma colaboração entre equipes de DevOps, engenheiros de dados, cientistas de dados e equipes de análise.
+
+**Conceitos fundamentais do DataOps:**
+- Metodologias ágeis
+- Práticas DevOps
+- Controle estatístico do processo (do Lean)
+
+**Objetivo:** Acelerar e industrializar a entrega e a execução de projetos centrados em dados.
+
+#### Pilares do DataOps
+
+Para que a colaboração do DataOps funcione efetivamente, existem três pilares principais:
+
+1. **Automação**:
+   - Automatiza processos de dados para respostas mais rápidas
+   - Reduz erros humanos
+   - Exemplo: Orquestração automatizada de pipelines ETL/ELT com ferramentas como Apache Airflow ou Prefect
+
+2. **Qualidade**:
+   - Melhora a qualidade dos dados através de governança e processos padronizados
+   - Implementa testes automatizados para dados
+   - Exemplo: Controles de qualidade automatizados que verificam a integridade e consistência dos dados
+
+3. **Colaboração**:
+   - Promove cultura orientada a dados
+   - Facilita tomada de decisão baseada em evidências
+   - Exemplo: Plataformas como Datadog ou DataHub para compartilhar conhecimento sobre dados
+
+**Processo DataOps típico:**
+1. Ingestão de dados de várias fontes
+2. Processamento e transformação automatizados
+3. Testes de qualidade dos dados
+4. Entrega para consumidores de dados
+5. Monitoramento contínuo da qualidade e utilidade
+
+**Exemplo de pipeline DataOps com dbt:**
+```yaml
+# dbt project file snippet
+models:
+  my_project:
+    staging:
+      materialized: view
+      tags: ["staging"]
+    
+    intermediate:
+      materialized: table
+      tags: ["intermediate"]
+    
+    marts:
+      materialized: table
+      tags: ["marts"]
+      
+tests:
+  - unique
+  - not_null
+  - relationships
+  - accepted_values
 ```
 
-#### MOD
-Retorna o resto da divisão.
+## Engine para Data Warehousing / Data Warehousing Engines
 
-```sql
-SELECT 
-    MOD(15, 4) AS resto,    -- 3
-    MOD(15, 5) AS resto2    -- 0
-FROM DUAL;
+### C-Store
+
+**C-Store** é um sistema de gerenciamento de banco de dados (DBMS) orientado a colunas desenvolvido por uma equipe de pesquisadores das universidades Brown, Brandeis, MIT e Massachusetts Boston, incluindo Michael Stonebraker, Stanley Zdonik e Samuel Madden.
+
+**Características principais:**
+- Armazenamento em colunas (em vez de linhas)
+- Compressão eficiente
+- Otimizado para cargas analíticas
+- Alta performance para queries de leitura
+
+O design do C-Store influenciou significativamente as arquiteturas modernas de data warehouse.
+
+### Warehouse Engine / Warehouse Engines
+
+Hoje, existem três opções dominantes para mecanismos de armazenamento de dados baseados em nuvem, todos inspirados no trabalho do C-Store:
+
+1. **Amazon Redshift**:
+   - Fácil de usar e configurar
+   - Excelente desempenho para o preço
+   - Forte integração com serviços AWS (S3, CloudWatch, etc.)
+   
+   ```sql
+   -- Exemplo de criação de tabela no Redshift com distribuição por chave
+   CREATE TABLE vendas (
+       id_venda INT PRIMARY KEY,
+       id_cliente INT,
+       data_venda DATE,
+       valor DECIMAL(10,2)
+   )
+   DISTKEY(id_cliente)
+   SORTKEY(data_venda);
+   ```
+
+2. **Google BigQuery**:
+   - Serverless - não requer gerenciamento de infraestrutura
+   - Escala automaticamente para qualquer volume de dados
+   - Excelente para consultas ad-hoc e cargas variáveis
+   
+   ```sql
+   -- Exemplo de consulta com particionamento no BigQuery
+   SELECT 
+       data_venda,
+       SUM(valor) as total_vendas
+   FROM `meu_projeto.dataset.vendas`
+   WHERE data_venda BETWEEN '2023-01-01' AND '2023-12-31'
+   GROUP BY data_venda
+   ORDER BY data_venda;
+   ```
+
+3. **Snowflake**:
+   - Arquitetura que separa armazenamento de computação
+   - Altamente escalável para volume e simultaneidade
+   - Multi-cloud (AWS, Azure, Google Cloud)
+   
+   ```sql
+   -- Exemplo de criação de tabela no Snowflake com clustering
+   CREATE TABLE vendas (
+       id_venda INT,
+       id_cliente INT,
+       data_venda DATE,
+       valor DECIMAL(10,2)
+   )
+   CLUSTER BY (data_venda);
+   ```
+
+**Comparação de características:**
+
+| Característica | Redshift | BigQuery | Snowflake |
+|---------------|----------|----------|-----------|
+| Modelo de preço | Baseado em nós | Pay-per-query | Separação compute/storage |
+| Escalabilidade | Manual | Automática | Automática |
+| Concorrência | Limitada pelos nós | Alta | Muito alta |
+| Manutenção | Moderada | Mínima | Mínima |
+| Integração | Ecossistema AWS | Ecossistema Google | Multi-cloud |
+
+## Data Engineering– Apache Flink / Data Engineering– Apache Flink
+
+O **Apache Flink** é um sistema de processamento de dados de código aberto que se destaca no processamento de dados em tempo real. Ele é capaz de analisar grandes volumes de dados com baixa latência e alto desempenho.
+
+**Características principais do Flink:**
+- Processamento de stream verdadeiro (não microbatching)
+- Garantias de processamento exatamente uma vez (exactly-once)
+- Gerenciamento de estado robusto
+- Alto throughput e baixa latência
+- Processamento de eventos fora de ordem
+
+**Exemplo de aplicação Flink simples:**
+```java
+// Exemplo de processamento de stream com Flink
+StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+
+// Fonte de dados
+DataStream<String> text = env.socketTextStream("localhost", 9999);
+
+// Transformação e processamento
+DataStream<Tuple2<String, Integer>> counts = text
+    .flatMap(new Tokenizer())
+    .keyBy(0)
+    .sum(1);
+
+// Saída
+counts.print();
+
+// Execução
+env.execute("Streaming WordCount");
 ```
 
-## Junções
+### Considerações ao Escolher o Apache Flink / Considerations When Choosing Apache Flink
 
-### Natural Join
+Ao avaliar ferramentas de processamento de dados como Apache Flink e Apache Spark, é importante considerar os seguintes pontos:
 
-- Une tabelas sem necessidade de especificar as colunas correspondentes
-- Nomes e tipos de dados das colunas devem ser idênticos em ambas as tabelas
+#### Modelo de processamento de dados distribuído / Distributed data processing model
 
-```sql
--- Natural Join usando sintaxe ANSI
-SELECT e.employee_id, e.last_name, d.department_name
-FROM employees e NATURAL JOIN departments d;
+Tanto Flink quanto Spark são projetados para processar grandes volumes de dados em um cluster de computadores, mas com abordagens diferentes:
+
+- **Flink**: Foco em processamento de stream verdadeiro e contínuo
+- **Spark**: Originalmente projetado para processamento em batch, com adaptação para microbatching
+
+#### High-level APIs / High-level APIs
+
+Ambos fornecem APIs de alto nível em várias linguagens:
+- Scala, Python, Java
+- Abstrações que simplificam a escrita de pipelines de dados
+
+#### Ecossistema de Big Data / Big Data Ecosystem
+
+Excelente integração com o ecossistema maior:
+- Hadoop Distributed File System (HDFS)
+- Apache Kafka
+- Sistemas de armazenamento em nuvem (S3, Azure Blob, etc.)
+
+#### Performance Optimization / Performance Optimization
+
+Ambos implementam otimizações de desempenho:
+- Spark: Utiliza o otimizador Catalyst
+- Flink: Possui um otimizador baseado em custo para processamento em lote
+
+#### Diferenças Principais: Spark
+
+
+#### Diferenças Principais: Spark vs. Flink / Key Differences: Spark vs. Flink
+
+##### Modelo de Processamento de Dados / Data Processing Model
+- **Apache Flink**: Focado principalmente no processamento de dados em tempo real com streaming nativo. Trata cada evento individualmente, processando-os assim que chegam.
+- **Apache Spark**: Originalmente projetado para processamento em lote, sendo mais adequado para análise retrospectiva de grandes conjuntos de dados. Seu modelo de streaming (Structured Streaming) é baseado em micro-batches.
+
+```java
+// Exemplo de processamento de stream em Flink
+DataStream<Transaction> transactions = env
+    .addSource(new KafkaSource<>())
+    .filter(transaction -> transaction.getAmount() > 1000)
+    .keyBy(Transaction::getAccountId)
+    .window(TumblingEventTimeWindows.of(Time.minutes(5)))
+    .process(new FraudDetector());
 ```
 
-### Cross Join
-
-- Apresenta todas as linhas possíveis entre as tabelas, sem aplicação de filtros
-- Operação potencialmente pesada que pode comprometer o desempenho do banco
-
-```sql
--- Cross Join (produto cartesiano)
-SELECT e.employee_id, e.last_name, d.department_id, d.department_name
-FROM employees e CROSS JOIN departments d;
+```scala
+// Exemplo equivalente em Spark Streaming
+val transactions = spark
+    .readStream
+    .format("kafka")
+    .option("subscribe", "transactions")
+    .load()
+    .filter($"amount" > 1000)
+    .groupBy($"accountId", window($"timestamp", "5 minutes"))
+    .agg(functions.count("*").as("count"))
+    .filter($"count" > 3)
 ```
 
-### Junções Externas (Outer Joins)
+##### Maturidade do Ecossistema de Big Data / Big Data Ecosystem Maturity
+- **Apache Spark**: Possui um ecossistema mais maduro e abrangente, incluindo bibliotecas como:
+  - Spark SQL para processamento de dados estruturados
+  - MLlib para machine learning
+  - GraphX para processamento de grafos
+  - Ampla variedade de conectores e integrações
 
-#### Full Outer Join
-Retorna todas as linhas de ambas as tabelas, independentemente de haver correspondência.
+- **Apache Flink**: Embora robusto, possui um ecossistema menor, mas com forte foco em:
+  - Processamento de streams em tempo real 
+  - CEP (Complex Event Processing)
+  - Gerenciamento de estado avançado
 
-```sql
--- Full Outer Join
-SELECT e.employee_id, e.last_name, d.department_id, d.department_name
-FROM employees e FULL OUTER JOIN departments d
-ON e.department_id = d.department_id;
+##### Gerenciamento de Desempenho e Estado / Performance and State Management
+- **Apache Flink**: Permite um gerenciamento de estado mais avançado, com:
+  - Checkpoints distribuídos
+  - Savepoints para upgrades de aplicação sem perda de estado
+  - Gerenciamento de estado local e remoto
+  - Suporte robusto para janelas de tempo e processamento de eventos fora de ordem
+
+- **Apache Spark**: Oferece funcionalidade básica de janelas, ideal para processamento em lote e microlote, mas com capacidades mais limitadas de gerenciamento de estado em comparação com o Flink.
+
+## O que é uma Arquitetura de Dados / What is a Data Architecture
+
+Um projeto arquitetural de dados é um plano detalhado e abrangente que descreve como os dados serão organizados, armazenados, integrados, processados e gerenciados em um sistema ou organização. Esse projeto é essencial para criar uma arquitetura de dados eficiente e bem estruturada.
+
+### Etapas para um Projeto Arquitetural de Dados / Steps for a Data Architecture Project
+
+1. **Requisitos e objetivos**:
+   - Identificar as necessidades de negócio
+   - Definir objetivos de desempenho, segurança e disponibilidade
+   - Exemplo: "Precisamos de acesso em tempo real aos dados de vendas com latência máxima de 5 segundos"
+
+2. **Análise e modelagem de dados**:
+   - Identificar fontes de dados
+   - Criar modelos lógicos e físicos
+   - Estabelecer relacionamentos entre entidades
+
+3. **Seleção de tecnologias**:
+   - Escolher bancos de dados apropriados (SQL, NoSQL, NewSQL)
+   - Definir ferramentas de ETL/ELT
+   - Selecionar plataformas de análise
+
+4. **Design da infraestrutura**:
+   - Definir componentes de hardware e software
+   - Planejar para alta disponibilidade e recuperação de desastres
+   - Estabelecer estratégias de escalabilidade
+
+5. **Definição de padrões e políticas**:
+   - Criar padrões de nomeação
+   - Estabelecer políticas de segurança e privacidade
+   - Definir procedimentos de governança
+
+6. **Plano de implementação**:
+   - Criar roteiro de migração/implementação
+   - Definir fases e marcos do projeto
+   - Estabelecer critérios de sucesso
+
+7. **Governança de dados**:
+   - Estabelecer processos de qualidade de dados
+   - Definir propriedade e responsabilidades
+   - Implementar controles de conformidade
+
+### Tipos de Arquitetura de Banco de Dados / Database Architecture Types
+
+Os bancos de dados podem ser caracterizados quanto à sua arquitetura:
+
+1. **Centralizado**:
+   - Todos os dados armazenados em um único sistema
+   - Mais simples de gerenciar
+   - Ponto único de falha
+   - Exemplo: Banco de dados monolítico tradicional
+
+2. **Descentralizado**:
+   - Dados distribuídos em múltiplos sistemas independentes
+   - Maior autonomia local
+   - Desafios de consistência
+   - Exemplo: Bancos de dados departamentais separados
+
+3. **Distribuído**:
+   - Sistema único logicamente, mas fisicamente distribuído
+   - Melhor desempenho e disponibilidade
+   - Maior complexidade operacional
+   - Exemplo: Cluster PostgreSQL
+
+4. **Replicado**:
+   - Cópias completas dos dados em múltiplos locais
+   - Alta disponibilidade e tolerância a falhas
+   - Desafios de sincronização
+   - Exemplo: Replica sets do MongoDB
+
+![Tipos de Arquitetura de Banco de Dados](https://example.com/img/db-architectures.png)
+
+### Objetivo da Arquitetura de Banco de Dados / Database Architecture Objective
+
+O objetivo principal é criar uma estrutura que atenda às necessidades de negócio enquanto otimiza desempenho, segurança, disponibilidade e escalabilidade.
+
+#### Passos para um Projeto Arquitetural de Banco de Dados:
+
+1. **Compreender os requisitos**:
+   - Volumetria de dados
+   - Padrões de acesso (leitura vs escrita)
+   - Requisitos de disponibilidade e latência
+
+2. **Definir escopo e funcionalidades**:
+   - Quais aplicações utilizarão o banco
+   - Tipos de consultas e processamento necessários
+   - Integrações com outros sistemas
+
+3. **Modelagem de dados**:
+   - Modelo conceitual (entidades e relacionamentos)
+   - Modelo lógico (tabelas, chaves, índices)
+   - Modelo físico (otimizações específicas da plataforma)
+
+4. **Escolha do SGBD**:
+   - Relacional vs NoSQL vs NewSQL
+   - Open source vs proprietário
+   - On-premises vs nuvem
+
+5. **Design da infraestrutura**:
+   - Capacidade de processamento e armazenamento
+   - Estratégias de backup e recuperação
+   - Configuração de alta disponibilidade
+
+6. **Definição de padrões e políticas**:
+   - Convenções de nomenclatura
+   - Controle de acesso e segurança
+   - Versionamento e gestão de mudanças
+
+7. **Normalização de dados** (para bancos relacionais):
+   - Eliminação de redundâncias
+   - Melhoria de integridade de dados
+   - Otimização para determinados casos de uso
+
+8. **Segurança e privacidade**:
+   - Criptografia de dados sensíveis
+   - Controle de acesso granular
+   - Auditoria e monitoramento
+
+9. **Planejamento de backup e recuperação**:
+   - RTO (Recovery Time Objective)
+   - RPO (Recovery Point Objective)
+   - Estratégias de backup incremental/diferencial
+
+10. **Implementação e testes**:
+    - Ambiente de desenvolvimento e homologação
+    - Testes de desempenho e carga
+    - Validação de requisitos
+
+11. **Monitoramento e otimização**:
+    - Ferramentas de monitoramento
+    - Análise de performance
+    - Otimização contínua
+
+12. **Documentação**:
+    - Diagrama de arquitetura
+    - Dicionário de dados
+    - Procedimentos operacionais
+
+## Business Intelligence (BI) Vs. Business Analytics (BA)
+
+**Business Intelligence (BI)** e **Business Analytics (BA)** são abordagens complementares mas distintas para análise de dados empresariais:
+
+| Business Intelligence (BI) | Business Analytics (BA) |
+|---------------------------|-------------------------|
+| Foco em **o que aconteceu** | Foco em **por que aconteceu e o que pode acontecer** |
+| Análise descritiva e diagnóstica | Análise preditiva e prescritiva |
+| Relatórios, dashboards e KPIs | Modelagem estatística e algoritmos preditivos |
+| Orientado a histórico e métricas | Orientado a descobertas e insights |
+| Suporta decisões operacionais | Suporta decisões estratégicas |
+
+**Exemplos de ferramentas:**
+- **BI**: Power BI, Tableau, QlikView, Looker
+- **BA**: R, Python (Pandas, scikit-learn), SAS, SPSS
+
+**Fluxo de trabalho típico:**
+1. **BI**: Dados → ETL → Data Warehouse → Visualização → Relatórios
+2. **BA**: Dados → Preparação → Modelagem → Algoritmos → Previsões → Recomendações
+
+## Datasets / Datasets
+
+Um **Dataset** (conjunto de dados) é uma coleção de dados normalmente tabulados, onde cada coluna representa uma variável particular e cada linha corresponde a um determinado membro do conjunto. Cada valor individual é conhecido como um dado.
+
+### Diferenças entre Data, Datasets e Databases / Differences between Data, Datasets and Databases
+
+- **Data (Dados)**: Observações ou medições (brutas ou processadas) representadas como texto, números ou multimídia.
+- **Dataset (Conjunto de dados)**: Coleção estruturada de dados geralmente associados a um único corpo de trabalho.
+- **Database (Banco de dados)**: Coleção organizada de dados armazenados como múltiplos conjuntos de dados, tipicamente em sistemas eletrônicos que permitem fácil acesso, manipulação e atualização.
+
+### Importância dos Datasets / Importance of Datasets
+
+Datasets são componentes fundamentais em projetos de ciência de dados e machine learning:
+- Base para o aprendizado dos algoritmos
+- Fonte para evolução e validação de modelos
+- Meio para exibição e interpretação de resultados
+
+Desafios comuns no trabalho com datasets incluem:
+- Limpeza e preparação dos dados
+- Segurança e privacidade
+- Determinação do nível de complexidade adequado para cada análise
+
+### Tipos de Datasets / Types of Datasets
+
+1. **Numerical Dataset (Conjunto de dados numéricos)**:
+   - Dados expressos em forma de números
+   - Exemplos: peso, altura, temperatura, valores monetários
+   - Aplicação: Análise de métricas de vendas mensais
+
+2. **Bivariate Dataset (Conjunto de dados bivariados)**:
+   - Duas variáveis relacionadas
+   - Exemplo: vendas de sorvete x temperatura do dia
+   - Aplicação: Análise de correlação entre preço e volume de vendas
+
+3. **Multivariate Dataset (Conjunto de dados multivariados)**:
+   - Múltiplas variáveis inter-relacionadas
+   - Exemplo: comprimento, largura, altura e volume de um objeto
+   - Aplicação: Análise de fatores que influenciam a satisfação do cliente
+
+4. **Categorical Dataset (Conjunto de dados categóricos)**:
+   - Representam características ou categorias
+   - Exemplo: estado civil (casado, solteiro, divorciado)
+   - Aplicação: Análise demográfica de clientes
+
+5. **Correlation Dataset (Conjunto de dados de correlação)**:
+   - Valores que demonstram relacionamento entre si
+   - Exemplo: consumo de sorvete x temperatura do dia
+   - Aplicação: Análise de fatores que influenciam vendas sazonais
+
+### Propriedades dos Datasets / Dataset Properties
+
+Antes de realizar qualquer análise, é essencial entender a natureza dos dados:
+
+1. **Centro de dados**: Medidas de tendência central (média, mediana, moda)
+2. **Distorção de dados**: Skewness (assimetria) e curtose (achatamento)
+3. **Presença de outliers**: Valores atípicos que podem distorcer análises
+4. **Correlação entre os dados**: Força e direção das relações entre variáveis
+5. **Tipo de distribuição de probabilidade**: Normal, exponencial, binomial, etc.
+
+```python
+# Exemplo de análise exploratória em Python
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Carregar dataset
+df = pd.read_csv('vendas_mensais.csv')
+
+# Estatísticas descritivas
+print(df.describe())
+
+# Verificar correlações
+correlation_matrix = df.corr()
+sns.heatmap(correlation_matrix, annot=True)
+plt.title('Matriz de Correlação')
+plt.show()
+
+# Verificar distribuição
+plt.figure(figsize=(10, 6))
+sns.histplot(df['vendas'], kde=True)
+plt.title('Distribuição das Vendas')
+plt.show()
 ```
 
-### Equijunção e Não Equijunção
-
-- **Equijunção**: Combina linhas que têm os mesmos valores nas colunas especificadas, usando o operador de igualdade (=)
-- **Não Equijunção**: Une tabelas sem correspondências exatas entre colunas, usando operadores como <, >, <=, >=, BETWEEN
-
-```sql
--- Equijunção
-SELECT e.employee_id, e.last_name, d.department_name
-FROM employees e JOIN departments d
-ON e.department_id = d.department_id;
-
--- Não Equijunção
-SELECT e.last_name, e.salary, g.grade_level
-FROM employees e JOIN salary_grades g
-ON e.salary BETWEEN g.lowest_sal AND g.highest_sal;
-```
-
-### Tratamento de Valores NULL
-
-#### NULLIF
-Compara duas expressões e retorna NULL se iguais, ou a primeira expressão se diferentes.
-
-```sql
-SELECT 
-    NULLIF(10, 10) AS resultado1,  -- NULL
-    NULLIF(10, 20) AS resultado2   -- 10
-FROM DUAL;
-```
-
-#### COALESCE
-Retorna o primeiro valor não NULL da lista.
-
-```sql
--- Substitui commission_pct NULL por 0
-SELECT 
-    employee_id, 
-    salary, 
-    COALESCE(commission_pct, 0) AS comissao
-FROM employees;
-```
-
-### Expressões Condicionais - CASE
-
-```sql
-SELECT 
-    employee_id, 
-    salary,
-    CASE 
-        WHEN salary < 5000 THEN 'Baixo'
-        WHEN salary BETWEEN 5000 AND 10000 THEN 'Médio'
-        ELSE 'Alto'
-    END AS nivel_salarial
-FROM employees;
-```
-
-### Autojunção e Consulta Hierárquica
-
-Autojunção permite relacionar uma tabela com ela mesma.
-
-```sql
--- Encontrar os gerentes dos funcionários
-SELECT 
-    e.employee_id, 
-    e.last_name AS funcionario, 
-    m.last_name AS gerente
-FROM employees e JOIN employees m
-ON e.manager_id = m.employee_id;
-```
-
-## Funções de Grupo
-
-Principais funções:
-
-```sql
--- Média
-SELECT AVG(salary) AS media_salarial FROM employees;
-
--- Contagem
-SELECT COUNT(*) AS total_funcionarios FROM employees;
-
--- Contagem de valores distintos
-SELECT COUNT(DISTINCT department_id) AS total_departamentos FROM employees;
-
--- Valor máximo e mínimo
-SELECT 
-    MAX(salary) AS maior_salario,
-    MIN(salary) AS menor_salario
-FROM employees;
-
--- Soma
-SELECT SUM(salary) AS folha_pagamento FROM employees;
-
--- Variância e desvio padrão
-SELECT 
-    VARIANCE(salary) AS variancia,
-    STDDEV(salary) AS desvio_padrao
-FROM employees;
-```
-
-### DISTINCT
-
-- Tem custo computacional alto
-- Deve ser evitado em full table scan em tabelas grandes
-
-```sql
--- Usar DISTINCT para valores únicos
-SELECT DISTINCT department_id FROM employees;
-```
-
-### GROUP BY
-
-Agrupa linhas com valores iguais em colunas resumidas.
-
-```sql
--- Contagem de funcionários por departamento
-SELECT 
-    department_id, 
-    COUNT(*) AS total_funcionarios,
-    AVG(salary) AS media_salarial
-FROM employees
-GROUP BY department_id;
-```
-
-### HAVING
-
-Filtra grupos, diferente de WHERE que filtra linhas.
-
-```sql
--- Filtrando departamentos com mais de 5 funcionários
-SELECT 
-    department_id, 
-    COUNT(*) AS total_funcionarios
-FROM employees
-GROUP BY department_id
-HAVING COUNT(*) > 5;
-```
-
-### ROLLUP, CUBE e GROUPING SETS
-
-Extensões do GROUP BY para análises multidimensionais.
-
-```sql
--- ROLLUP: totais hierárquicos
-SELECT 
-    department_id, 
-    job_id, 
-    SUM(salary) AS soma_salarios
-FROM employees
-GROUP BY ROLLUP(department_id, job_id);
-
--- CUBE: todas as combinações de agrupamento
-SELECT 
-    department_id, 
-    job_id, 
-    SUM(salary) AS soma_salarios
-FROM employees
-GROUP BY CUBE(department_id, job_id);
-```
-
-### Operadores de Conjunto
-
-- **UNION**: Retorna todas as linhas de ambas as tabelas, eliminando duplicatas
-- **UNION ALL**: Retorna todas as linhas sem eliminar duplicatas
-- **INTERSECT**: Retorna linhas comuns a ambas as tabelas
-- **MINUS**: Retorna linhas da primeira tabela que não existem na segunda
-
-```sql
--- União de resultados
-SELECT employee_id, last_name FROM employees
-UNION
-SELECT employee_id, last_name FROM former_employees;
-
--- Interseção de resultados
-SELECT department_id FROM employees
-INTERSECT
-SELECT department_id FROM departments;
-
--- Diferença de conjuntos
-SELECT department_id FROM departments
-MINUS
-SELECT department_id FROM employees;
-```
-
-## Subconsultas
-
-Consultas aninhadas dentro de outras consultas.
-
-```sql
--- Funcionários com salário acima da média
-SELECT employee_id, last_name, salary
-FROM employees
-WHERE salary > (SELECT AVG(salary) FROM employees);
-
--- Subconsulta correlacionada
-SELECT e.employee_id, e.last_name
-FROM employees e
-WHERE e.salary > (
-    SELECT AVG(salary)
-    FROM employees
-    WHERE department_id = e.department_id
-);
-```
-
-## Constraints e Views
-
-### Constraints (Restrições)
-
-Regras aplicadas às colunas de uma tabela para garantir a integridade dos dados.
-
-#### Nível da Coluna
-```sql
--- Constraint de nível de coluna
-CREATE TABLE employees (
-    employee_id NUMBER(6) PRIMARY KEY,
-    first_name VARCHAR2(20),
-    last_name VARCHAR2(25) NOT NULL,
-    email VARCHAR2(25) UNIQUE,
-    hire_date DATE DEFAULT SYSDATE,
-    salary NUMBER(8,2) CHECK (salary > 0)
-);
-```
-
-#### Nível da Tabela
-```sql
--- Constraint de nível de tabela
-CREATE TABLE employees (
-    employee_id NUMBER(6),
-    first_name VARCHAR2(20),
-    last_name VARCHAR2(25),
-    email VARCHAR2(25),
-    hire_date DATE,
-    salary NUMBER(8,2),
-    CONSTRAINT pk_emp PRIMARY KEY (employee_id),
-    CONSTRAINT unq_email UNIQUE (email),
-    CONSTRAINT chk_salary CHECK (salary > 0)
-);
-```
-
-#### Principais Tipos de Constraints
-
-- **PRIMARY KEY**: Identifica exclusivamente cada registro
-- **FOREIGN KEY**: Garante a integridade referencial
-- **UNIQUE**: Garante que todos os valores numa coluna sejam diferentes
-- **CHECK**: Garante que valores atendam a uma condição específica
-- **NOT NULL**: Garante que uma coluna não possa ter valores NULL
-
-### Views
-
-Tabelas virtuais baseadas em consultas SQL.
-
-```sql
--- Criação básica de view
-CREATE VIEW emp_dept_view AS
-SELECT e.employee_id, e.last_name, d.department_name
-FROM employees e JOIN departments d
-ON e.department_id = d.department_id;
-
--- View com CHECK OPTION
-CREATE OR REPLACE VIEW high_salary_emp AS
-SELECT employee_id, last_name, salary, department_id
-FROM employees
-WHERE salary > 10000
-WITH CHECK OPTION CONSTRAINT high_sal_chk;
-
--- View somente leitura
-CREATE OR REPLACE VIEW dept_summary AS
-SELECT department_id, COUNT(*) AS emp_count
-FROM employees
-GROUP BY department_id
-WITH READ ONLY;
-```
-
-#### Opções para Views
-
-| **COMANDO** | **COMMAND** | **OPERAÇÃO** | **OPERATION** |
-|-------------|-------------|--------------|---------------|
-| OR REPLACE | OR REPLACE | Recria a view, caso já exista | Recreates the view if it already exists |
-| FORCE | FORCE | Cria a view mesmo que as tabelas básicas não existam | Creates the view even if base tables do not exist |
-| NOFORCE | NOFORCE | Cria a view apenas se a tabela básica existir (padrão) | Creates the view only if the base table exists (default) |
-| WITH CHECK OPTION | WITH CHECK OPTION | Garante que linhas permaneçam acessíveis à view após operações DML | Ensures rows remain visible through the view after INSERT/UPDATE operations |
-| CONSTRAINT * | CONSTRAINT * | Nome atribuído ao constraint CHECK OPTION | Name assigned to the CHECK OPTION constraint |
-| WITH READ ONLY | WITH READ ONLY | Garante que nenhuma operação DML possa ser executada na view | Guarantees no DML operations can be performed on the view |
-
-#### Análise TOP-N
-
-Técnica para recuperar um número específico de registros ordenados.
-
-```sql
--- Top 5 salários mais altos
-SELECT employee_id, last_name, salary
-FROM employees
-ORDER BY salary DESC
-FETCH FIRST 5 ROWS ONLY;
-
--- Alternativa com ROWNUM (Oracle)
-SELECT employee_id, last_name, salary
-FROM (
-    SELECT employee_id, last_name, salary
-    FROM employees
-    ORDER BY salary DESC
-)
-WHERE ROWNUM <= 5;
-```
-
-## Sequences, Índices e Sinônimos
-
-### Sequences
-
-Objetos do banco de dados usados para gerar automaticamente números sequenciais.
-
-```sql
--- Criação de sequence
-CREATE SEQUENCE emp_seq
-  START WITH 1000
-  INCREMENT BY 1
-  NOCACHE
-  NOCYCLE;
-
--- Utilizando sequence
-INSERT INTO employees (employee_id, last_name, email)
-VALUES (emp_seq.NEXTVAL, 'Smith', 'smith@example.com');
-
--- Verificando valor atual
-SELECT emp_seq.CURRVAL FROM DUAL;
-```
-
-### Índices
-
-Objetos que aceleram a recuperação de linhas por meio de ponteiros.
-
-```sql
--- Índice simples
-CREATE INDEX idx_emp_last_name
-ON employees(last_name);
-
--- Índice composto/concatenado
-CREATE INDEX idx_emp_dept_job
-ON employees(department_id, job_id);
-
--- Índice único
-CREATE UNIQUE INDEX idx_emp_email
-ON employees(email);
-```
-
-#### Quando Criar Índices
-
-- Colunas com alta cardinalidade (muitos valores distintos)
-- Colunas frequentemente usadas em cláusulas WHERE ou condições de junção
-- Tabelas grandes onde consultas recuperam menos de 2-4% das linhas
-
-#### Quando Não Criar Índices
-
-- Tabelas pequenas
-- Tabelas frequentemente atualizadas
-- Colunas raramente usadas em condições de consulta
-- Colunas com baixa cardinalidade
-- Colunas referenciadas como parte de expressões
-
-### Sinônimos (Synonyms)
-
-Nomes alternativos para objetos do banco de dados.
-
-```sql
--- Criando sinônimo privado
-CREATE SYNONYM emp FOR employees;
-
--- Criando sinônimo público (requer privilégios)
-CREATE PUBLIC SYNONYM dept FOR hr.departments;
-
--- Utilizando sinônimo
-SELECT * FROM emp WHERE emp_id = 100;
-```
-
-## Privilégios e Expressões Regulares
-
-### Privilégios
-
-Direitos para executar certas instruções SQL, gerenciados pelo DBA.
-
-#### Categorias de Segurança
-
-- **Segurança de Sistema**: Controla acesso ao banco de dados em nível de sistema (criar usuários, alocar espaço, conceder privilégios)
-- **Segurança de Dados**: Relaciona-se aos privilégios sobre objetos específicos do banco de dados
-
-```sql
--- Concedendo privilégios de objeto
-GRANT SELECT, INSERT ON employees TO user1;
-
--- Concedendo privilégios com opção de repasse
-GRANT SELECT ON departments TO user1 WITH GRANT OPTION;
-
--- Revogando privilégios
-REVOKE SELECT ON employees FROM user1;
-```
-
-### Expressões Regulares
-
-Método para descrever padrões simples e complexos para pesquisa e manipulação de strings.
-
-#### Metacaracteres Principais
-
-| **Símbolo** | **Descrição** | **Description** |
-|-------------|---------------|-----------------|
-| `.` | Corresponde a qualquer caractere único, exceto NULL | Matches any single character except NULL |
-| `?` | Corresponde a zero ou uma ocorrência | Matches zero or one occurrence |
-| `*` | Corresponde a zero ou mais ocorrências | Matches zero or more occurrences |
-| `+` | Corresponde a uma ou mais ocorrências | Matches one or more occurrences |
-| `()` | Agrupamento: trata o conteúdo como subexpressão | Grouping: treats content as a subexpression |
-| `\` | Caractere de escape | Escape character |
-| `\|` | Alternância: especifica correspondências alternativas | Alternation: specifies alternative matches |
-| `^` / `$` | Corresponde ao início/fim da linha | Matches start/end of line |
-| `[]` | Conjunto de caracteres: qualquer um dos caracteres listados | Character class: any one of the listed characters |
-
-```sql
--- Encontrando emails com padrão específico
-SELECT first_name, email
-FROM employees
-WHERE REGEXP_LIKE(email, '^[A-Z]{4}_[A-Z]{3}$');
-
--- Substituindo padrões com expressões regulares
-SELECT 
-    REGEXP_REPLACE('abc123def456', '[0-9]+', 'NUM') AS resultado
-FROM DUAL;
--- Resultado: abcNUMdefNUM
-
--- Extraindo substrings que correspondem ao padrão
-SELECT 
-    REGEXP_SUBSTR('Contato: (11) 98765-4321', '[0-9]{2}\) [0-9\-]+') AS telefone
-FROM DUAL;
--- Resultado: 11) 98765-4321
-```
-
-## Glossário
-
-| **Termo** | **Term** | **Definição** | **Definition** |
-|-----------|----------|---------------|---------------|
-| Comandos DML | DML Commands | Linguagem de Manipulação de Dados - comandos usados para manipular dados como SELECT, INSERT, UPDATE e DELETE | Data Manipulation Language - commands used to manipulate data like SELECT, INSERT, UPDATE and DELETE |
-| Função de Linha Única | Single-Row Function | Função que opera em uma linha por vez e retorna um resultado para cada linha | Function that operates on one row at a time and returns one result per row |
-| Função de Grupo | Group Function | Função que opera em conjuntos de linhas para retornar um único resultado por grupo | Function that operates on sets of rows to return one result per group |
-| Junção | Join | Operação que combina linhas de duas ou mais tabelas com base em colunas relacionadas | Operation that combines rows from two or more tables based on related columns |
-| Natural Join | Natural Join | Junção que combina tabelas baseada em colunas com mesmo nome e tipo de dados | Join that combines tables based on columns with the same name and data type |
-| Equijunção | Equijoin | Junção baseada em valores iguais entre colunas relacionadas | Join based on equal values between related columns |
-| Junção Externa | Outer Join | Junção que inclui linhas não correspondentes de uma ou ambas as tabelas | Join that includes non-matching rows from one or both tables |
-| Subconsulta | Subquery | Consulta aninhada dentro de outra consulta SQL | Query nested inside another SQL query |
-| Constraint | Constraint | Regra que limita os valores permitidos em uma tabela | Rule that restricts the values allowed in a table |
-| View | View | Tabela virtual baseada em uma consulta SQL | Virtual table based on a SQL query |
-| Sequence | Sequence | Objeto que gera valores numéricos sequenciais | Object that generates sequential numeric values |
-| Índice | Index | Estrutura para melhorar a velocidade de recuperação de dados | Structure to improve the speed of data retrieval |
-| Sinônimo | Synonym | Nome alternativo para um objeto de banco de dados | Alternative name for a database object |
-| Privilégio | Privilege | Permissão para executar determinadas operações no banco de dados | Permission to perform certain operations in the database |
-| Expressão Regular | Regular Expression | Padrão que descreve um conjunto de strings | Pattern that describes a set of strings |
-| GROUP BY | GROUP BY | Cláusula que agrupa linhas com valores iguais | Clause that groups rows with equal values |
-| HAVING | HAVING | Cláusula que filtra grupos após o agrupamento | Clause that filters groups after grouping |
-| ROLLUP | ROLLUP | Extensão do GROUP BY que produz totais hierárquicos | Extension of GROUP BY that produces hierarchical totals |
-| CUBE | CUBE | Extensão do GROUP BY que produz todas as combinações de agrupamento | Extension of GROUP BY that produces all grouping combinations |
-| DBA | DBA | Administrador de Banco de Dados - profissional responsável pela administração | Database Administrator - professional responsible for database administration |
+### Onde Encontrar / Where to Find
+
+Existem diversas fontes para datasets:
+
+1. **Portais Governamentais**:
+   - [Portal Brasileiro de Dados Abertos](https://dados.gov.br/)
+   - [Data.gov](https://www.data.gov/) (EUA)
+
+2. **Universidades e Instituições Acadêmicas**:
+   - [UCI Machine Learning Repository](https://archive.ics.uci.edu/ml/index.php)
+   - Repositórios acadêmicos de várias universidades
+
+3. **Plataformas Especializadas**:
+   - [Kaggle](https://www.kaggle.com/datasets)
+   - [Google Dataset Search](https://datasetsearch.research.google.com/)
+   - [FiveThirtyEight](https://data.fivethirtyeight.com/)
+
+4. **APIs e Ferramentas Específicas**:
+   - [SIDRA/IBGE](https://servicodados.ibge.gov.br/api/docs/agregados?versao=3)
+   - [Awesome Public Datasets](https://github.com/awesomedata/awesome-public-datasets) no GitHub
+
+Os datasets são frequentemente disponibilizados em formatos como CSV (Comma-Separated Values), JSON, Excel, ou formatos específicos para determinadas aplicações.
+
+### Dados Abertos na Ciência / Open Data in Science
+
+O conceito de acesso aberto a dados científicos foi estabelecido institucionalmente com a formação do sistema World Data Center em 1957-1958. O Conselho Internacional para a Ciência supervisiona vários Centros de Dados Mundiais com o objetivo de:
+
+- Minimizar o risco de perda de dados
+- Maximizar a acessibilidade dos dados científicos
+- Promover a colaboração entre pesquisadores
+
+A internet transformou significativamente o contexto dos dados de ciência aberta, tornando a publicação e obtenção de dados muito mais rápida, econômica e acessível.
+
+#### Projeto Genoma Humano / Human Genome Project
+
+O Projeto Genoma Humano foi uma iniciativa pioneira que exemplificou o poder dos dados abertos, baseando-se nos "Princípios das Bermudas":
+
+> "Todas as informações sobre a sequência genômica humana devem estar disponíveis gratuitamente e em domínio público para incentivar a pesquisa e o desenvolvimento e maximizar seus benefícios para a sociedade"
+
+Iniciativas mais recentes, como o Structural Genomics Consortium, demonstraram que a abordagem de dados abertos também pode ser aplicada produtivamente no contexto de P&D industrial.
+
+### Plataformas de Datasets / Dataset Platforms
+
+#### Kaggle
+[Kaggle](https://www.kaggle.com/) é uma das mais conhecidas plataformas para competições de Data Science:
+
+- Fundada em 2010 por Anthony Goldbloom
+- Adquirida pelo Google (Alphabet) em 2017
+- Hospeda competições públicas, privadas e acadêmicas
+- Oferece prêmios em dinheiro para soluções vencedoras
+- Disponibiliza datasets sobre diversos temas
+- Possui fóruns para compartilhamento de conhecimento
+
+#### UCI Machine Learning Repository
+[UCI](https://archive.ics.uci.edu/ml/index.php) (UC Irvine Machine Learning Repository):
+
+- Mais de 500 conjuntos de dados
+- Focado em machine learning e análise estatística
+- Recurso valioso para pesquisadores e estudantes
+- Datasets bem documentados e categorizados
+
+### Dados Abertos Governamentais / Open Government Data
+
+Uma das formas mais importantes de dados abertos são os dados governamentais (OGD - Open Government Data):
+
+- Criados por instituições governamentais
+- Impactam diretamente a vida cotidiana dos cidadãos
+- Promovem transparência e participação cívica
+- Facilitam análises de políticas públicas e serviços
+
+#### SIDRA - Sistema IBGE de Recuperação Automática
+[SIDRA](https://servicodados.ibge.gov.br/api/docs/agregados?versao=3) é uma API que disponibiliza dados agregados do IBGE:
+
+- Dados de pesquisas e censos realizados no Brasil
+- Interface programática para incorporação em aplicações
+- Documentação detalhada dos métodos disponíveis
+- Recurso valioso para análises demográficas e econômicas do Brasil
+
+### Fontes de Dados Públicos / Public Data Sources
+
+#### Fontes Nacionais:
+- [INEP](https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos) - Dados educacionais
+- [Portal da Transparência](https://portaldatransparencia.gov.br/) - Gastos governamentais
+- [Open Data SUS](https://opendata.saude.gov.br/) - Dados de saúde pública
+- [Base dos Dados](https://basedosdados.org/) - Versão tratada de dados públicos brasileiros
+- [Data Rio](https://www.data.rio/) - Dados da cidade do Rio de Janeiro
+- [Portal da Transparência de SP](https://www.transparencia.sp.gov.br/) - Dados do estado de São Paulo
+
+#### Outras Fontes Interessantes:
+- [FiveThirtyEight](https://data.fivethirtyeight.com/) - Site interativo com visualizações de dados
+  - Exemplos: Airline Safety (acidentes por companhia aérea), US Weather History (dados meteorológicos históricos)
+- [Awesome Data](https://github.com/awesomedata/awesome-public-datasets) - Repositório GitHub com conjuntos de dados por categoria
+- [Google Dataset Search Tool](https://cloud.google.com/bigquery/public-data/) - Ferramenta de busca específica para datasets
+
+---
+
